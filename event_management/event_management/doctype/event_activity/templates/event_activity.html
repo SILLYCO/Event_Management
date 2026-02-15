@@ -1,77 +1,227 @@
 {% extends "templates/web.html" %}
 
 {% block page_content %}
-<div class="py-10">
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "soft-blue": "#f0f7ff",
+                        "charcoal": "#1f2937",
+                        "light-gray": "#f9fafb",
+                        "border-gray": "#e5e7eb",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-white text-charcoal font-display antialiased">
 
-    <div class="flex items-center gap-2 mb-4">
-        <span class="badge badge-primary">{{ doc.event_category }}</span>
-        
-        {% if doc.event_status == 'Open for Registration' %}
-            <span class="badge badge-success">Open</span>
-        {% elif doc.event_status == 'Sold Out' %}
-            <span class="badge badge-danger">Sold Out</span>
-        {% elif doc.event_status == 'Completed' %}
-            <span class="badge badge-dark">Ended</span>
-        {% else %}
-            <span class="badge badge-warning">{{ doc.event_status }}</span>
-        {% endif %}
-    </div>
+{% set confirmed_count = frappe.db.count("Event Attendee", {"event_activity": doc.name, "status": "Registered"}) %}
+{% set percent = 0 %}
+{% if doc.capacity > 0 %}
+    {% set percent = (confirmed_count / doc.capacity * 100) | round %}
+{% endif %}
 
-    <h1 class="text-3xl font-bold mb-2">{{ doc.event_title }}</h1>
+{% set my_rsvp = "None" %}
+{% if frappe.session.user != 'Guest' %}
+    {% set my_rsvp = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, "status") %}
+{% endif %}
 
-    <p class="text-gray-500 mb-6">
-        📅 {{ doc.get_formatted("start_date") }} 
-        {% if doc.end_date %} 
-            - {{ doc.get_formatted("end_date") }}
-        {% endif %}
-        <br>
-        📍 Capacity: {{ doc.capacity }} seats
-    </p>
-
-    <div class="my-6 p-6 border rounded bg-gray-50">
-        {% if frappe.session.user == 'Guest' %}
-            <h4 class="mb-2 font-bold">Join this Event</h4>
-            <p class="mb-4">You must log in to apply for a spot.</p>
-            <a href="/login?redirect-to={{ request.path }}" class="btn btn-primary">
-                Login to Register
-            </a>
-        {% else %}
-            {% set my_rsvp = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, "status") %}
-
-            {% if my_rsvp == 'Registered' %}
-                <div class="alert alert-success">✅ <b>You are Registered!</b></div>
-            {% elif my_rsvp == 'Pending Approval' %}
-                <div class="alert alert-warning">⏳ <b>Application Pending</b></div>
-            {% elif my_rsvp == 'Rejected' %}
-                <div class="alert alert-danger">🚫 <b>Application Declined</b></div>
-            {% else %}
+<header class="bg-white border-b border-border-gray">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+            
+            <div class="order-2 lg:order-1">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-6">
+                    <span class="material-symbols-outlined text-primary text-sm font-semibold">category</span>
+                    <span class="text-primary text-xs font-bold uppercase tracking-wider">{{ doc.event_category }}</span>
+                </div>
                 
                 {% if doc.event_status == 'Open for Registration' %}
-                    <button class="btn btn-primary btn-lg" id="btn-register">Apply Now</button>
+                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-200 mb-6 text-xs font-bold uppercase">Open</span>
                 {% elif doc.event_status == 'Sold Out' %}
-                    <button class="btn btn-danger" disabled>🚫 Sold Out</button>
-                {% elif doc.event_status == 'Opening Soon' %}
-                    <button class="btn btn-secondary" disabled>⏳ Registration Opens Soon</button>
+                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-200 mb-6 text-xs font-bold uppercase">Sold Out</span>
                 {% else %}
-                    <button class="btn btn-light" disabled>Registration Closed</button>
+                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200 mb-6 text-xs font-bold uppercase">{{ doc.event_status }}</span>
                 {% endif %}
 
-            {% endif %}
-        {% endif %}
-    </div>
+                <h1 class="text-charcoal text-4xl lg:text-5xl font-black leading-tight tracking-tight mb-6">
+                    {{ doc.event_title }}
+                </h1>
+                
+                <div class="text-gray-600 text-lg leading-relaxed mb-8 max-w-xl">
+                    {{ doc.event_description | striptags | truncate(150) }}
+                </div>
 
-    <div class="prose max-w-none mt-8">
-        {{ doc.event_description }}
-    </div>
+                <div class="flex flex-wrap gap-4">
+                     <a href="#register-section" class="px-8 py-3.5 rounded-lg bg-primary hover:bg-blue-600 text-white font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                        <span>Go to Registration</span>
+                        <span class="material-symbols-outlined text-lg">arrow_downward</span>
+                    </a>
+                </div>
+            </div>
 
-</div>
+            <div class="order-1 lg:order-2">
+                <div class="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white aspect-video lg:aspect-square">
+                    {% if doc.event_image %}
+                        <div class="absolute inset-0 bg-cover bg-center" style='background-image: url("{{ doc.event_image }}");'></div>
+                    {% else %}
+                        <div class="absolute inset-0 bg-gray-100 flex items-center justify-center text-gray-400">
+                            <span class="material-symbols-outlined text-6xl">image_not_supported</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid lg:grid-cols-3 gap-12">
+        
+        <div class="lg:col-span-2 space-y-12">
+            
+            <div class="grid sm:grid-cols-1 gap-6">
+                <div class="p-6 rounded-xl bg-light-gray border border-border-gray flex items-start gap-4">
+                    <div class="p-3 rounded-lg bg-white shadow-sm text-primary border border-border-gray">
+                        <span class="material-symbols-outlined">calendar_month</span>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Date & Time</p>
+                        <p class="text-charcoal font-bold text-lg leading-tight">{{ doc.get_formatted("start_date") }}</p>
+                        {% if doc.end_date %}
+                            <p class="text-gray-600 text-sm">Until: {{ doc.get_formatted("end_date") }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <section>
+                <h2 class="text-2xl font-black text-charcoal mb-6 flex items-center gap-2">
+                    <span class="w-8 h-1 bg-primary rounded-full"></span>
+                    About the Event
+                </h2>
+                <div class="prose prose-slate max-w-none text-gray-600 leading-relaxed space-y-4">
+                    {{ doc.event_description }}
+                </div>
+            </section>
+        </div>
+
+        <aside class="space-y-8" id="register-section">
+            <div class="sticky top-8 p-8 rounded-2xl bg-white border border-border-gray shadow-sm">
+                
+                <div class="mb-6">
+                    <p class="text-gray-500 text-sm mb-1 font-medium">Availability</p>
+                    <div class="flex items-end justify-between">
+                        <h3 class="text-3xl font-black text-charcoal">{{ confirmed_count }} <span class="text-lg font-normal text-gray-400">/ {{ doc.capacity }}</span></h3>
+                        <span class="text-primary text-sm font-bold bg-soft-blue px-2 py-1 rounded">Taken</span>
+                    </div>
+                    <div class="w-full bg-gray-100 h-2 rounded-full mt-4 overflow-hidden">
+                        <div class="bg-primary h-full transition-all duration-500" style="width: {{ percent }}%"></div>
+                    </div>
+                </div>
+
+                <hr class="my-6 border-border-gray"/>
+
+                {% if frappe.session.user == 'Guest' %}
+                    <div class="text-center">
+                        <p class="text-gray-600 mb-4 text-sm">You must account to register.</p>
+                        <a href="/login?redirect-to={{ request.path }}" class="w-full block py-4 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold shadow-lg shadow-primary/20 transition-all text-center">
+                            Login to Register
+                        </a>
+                    </div>
+
+                {% else %}
+                    
+                    {% if my_rsvp == 'Registered' %}
+                        <div class="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 mb-4 flex items-center gap-3">
+                            <span class="material-symbols-outlined">check_circle</span>
+                            <div>
+                                <p class="font-bold">You are Registered!</p>
+                                <p class="text-xs">Your seat is confirmed.</p>
+                            </div>
+                        </div>
+
+                    {% elif my_rsvp == 'Pending Approval' %}
+                        <div class="p-4 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800 mb-4 flex items-center gap-3">
+                            <span class="material-symbols-outlined">hourglass_top</span>
+                            <div>
+                                <p class="font-bold">Application Pending</p>
+                                <p class="text-xs">Waiting for admin approval.</p>
+                            </div>
+                        </div>
+                    
+                    {% elif my_rsvp == 'Rejected' %}
+                        <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 mb-4 flex items-center gap-3">
+                            <span class="material-symbols-outlined">cancel</span>
+                            <div>
+                                <p class="font-bold">Application Declined</p>
+                            </div>
+                        </div>
+
+                    {% else %}
+                        
+                        {% if doc.event_status == 'Open for Registration' %}
+                            <button id="btn-apply-sidebar" class="w-full py-4 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold shadow-lg shadow-primary/20 transition-all mb-4 flex justify-center items-center gap-2">
+                                <span>Apply Now</span>
+                                <span class="material-symbols-outlined">send</span>
+                            </button>
+                        
+                        {% elif doc.event_status == 'Sold Out' %}
+                            <button disabled class="w-full py-4 rounded-xl bg-gray-100 text-gray-400 font-bold border border-gray-200 cursor-not-allowed">
+                                Sold Out
+                            </button>
+                        
+                        {% else %}
+                            <button disabled class="w-full py-4 rounded-xl bg-gray-100 text-gray-400 font-bold border border-gray-200 cursor-not-allowed">
+                                {{ doc.event_status }}
+                            </button>
+                        {% endif %}
+
+                    {% endif %}
+
+                {% endif %}
+                
+                {% if doc.event_status == 'Open for Registration' %}
+                    <p class="text-center text-xs text-gray-400 mt-6">
+                        Approval is required for all applications.
+                    </p>
+                {% endif %}
+            </div>
+        </aside>
+    </div>
+</main>
+
+<footer class="border-t border-border-gray py-12 mt-12 bg-light-gray">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <p class="text-gray-500 text-sm">Powered by Frappe Events App</p>
+    </div>
+</footer>
 
 <script>
-    const btn = document.getElementById('btn-register');
-    if (btn) {
-        btn.onclick = function() {
-            btn.disabled = true;
-            btn.innerText = "Processing...";
+    const applyBtn = document.getElementById('btn-apply-sidebar');
+    
+    if (applyBtn) {
+        applyBtn.onclick = function() {
+            applyBtn.disabled = true;
+            applyBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Processing...';
 
             frappe.call({
                 method: "frappe.client.insert",
@@ -83,15 +233,22 @@
                 },
                 callback: function(r) {
                     if(!r.exc) {
-                        frappe.msgprint({title: 'Success', indicator: 'green', message: 'Application sent!'});
-                        setTimeout(() => window.location.reload(), 2000);
+                        frappe.msgprint({
+                            title: 'Success',
+                            indicator: 'green',
+                            message: 'Application sent successfully!'
+                        });
+                        setTimeout(() => window.location.reload(), 1500);
                     } else {
-                        btn.disabled = false;
-                        btn.innerText = "Apply Now";
+                        applyBtn.disabled = false;
+                        applyBtn.innerText = "Apply Now";
                     }
                 }
             });
         }
     }
 </script>
+
+</body>
+</html>
 {% endblock %}

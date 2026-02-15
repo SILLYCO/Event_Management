@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format: EV-{YYYY}-{MM}-{title}",
+ "autoname": "format: EV-{YYYY}-{MM}-{event_title}",
  "creation": "2026-02-13 06:35:01.161379",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -115,7 +115,7 @@
  "index_web_pages_for_search": 1,
  "is_published_field": "published",
  "links": [],
- "modified": "2026-02-13 07:42:58.821788",
+ "modified": "2026-02-15 06:54:43.517766",
  "modified_by": "Administrator",
  "module": "Event Management",
  "name": "Event Activity",
