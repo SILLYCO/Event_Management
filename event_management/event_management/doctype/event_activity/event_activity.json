@@ -1,0 +1,145 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format: EV-{YYYY}-{MM}-{title}",
+ "creation": "2026-02-13 06:35:01.161379",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "event_details_section",
+  "event_title",
+  "event_status",
+  "column_break_ooyv",
+  "event_category",
+  "published",
+  "event_related_details_section",
+  "start_date",
+  "capacity",
+  "column_break_jiaw",
+  "end_date",
+  "event_image",
+  "section_break_njqc",
+  "event_description",
+  "route"
+ ],
+ "fields": [
+  {
+   "fieldname": "event_details_section",
+   "fieldtype": "Section Break",
+   "label": "Event Details"
+  },
+  {
+   "fieldname": "event_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Event Title",
+   "reqd": 1
+  },
+  {
+   "default": "Opening Soon",
+   "fieldname": "event_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Event Status",
+   "options": "Opening Soon\nOpen for Registration\nSold Out\nCompleted\nCancelled",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ooyv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "published",
+   "fieldtype": "Check",
+   "label": "Published"
+  },
+  {
+   "fieldname": "event_related_details_section",
+   "fieldtype": "Section Break",
+   "label": "Event Related Details"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "capacity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Capacity",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_jiaw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Datetime",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "event_image",
+   "fieldtype": "Attach Image",
+   "label": "Event Image"
+  },
+  {
+   "fieldname": "section_break_njqc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "event_description",
+   "fieldtype": "Text Editor",
+   "label": "Event Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "label": "Route"
+  },
+  {
+   "fieldname": "event_category",
+   "fieldtype": "Link",
+   "label": "Event Category",
+   "options": "Event Category",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "has_web_view": 1,
+ "index_web_pages_for_search": 1,
+ "is_published_field": "published",
+ "links": [],
+ "modified": "2026-02-13 07:42:58.821788",
+ "modified_by": "Administrator",
+ "module": "Event Management",
+ "name": "Event Activity",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "route": "route",
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_views": 1
+}

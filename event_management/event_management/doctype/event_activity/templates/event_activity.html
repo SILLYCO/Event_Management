@@ -1,0 +1,97 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="py-10">
+
+    <div class="flex items-center gap-2 mb-4">
+        <span class="badge badge-primary">{{ doc.event_category }}</span>
+        
+        {% if doc.event_status == 'Open for Registration' %}
+            <span class="badge badge-success">Open</span>
+        {% elif doc.event_status == 'Sold Out' %}
+            <span class="badge badge-danger">Sold Out</span>
+        {% elif doc.event_status == 'Completed' %}
+            <span class="badge badge-dark">Ended</span>
+        {% else %}
+            <span class="badge badge-warning">{{ doc.event_status }}</span>
+        {% endif %}
+    </div>
+
+    <h1 class="text-3xl font-bold mb-2">{{ doc.event_title }}</h1>
+
+    <p class="text-gray-500 mb-6">
+        📅 {{ doc.get_formatted("start_date") }} 
+        {% if doc.end_date %} 
+            - {{ doc.get_formatted("end_date") }}
+        {% endif %}
+        <br>
+        📍 Capacity: {{ doc.capacity }} seats
+    </p>
+
+    <div class="my-6 p-6 border rounded bg-gray-50">
+        {% if frappe.session.user == 'Guest' %}
+            <h4 class="mb-2 font-bold">Join this Event</h4>
+            <p class="mb-4">You must log in to apply for a spot.</p>
+            <a href="/login?redirect-to={{ request.path }}" class="btn btn-primary">
+                Login to Register
+            </a>
+        {% else %}
+            {% set my_rsvp = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, "status") %}
+
+            {% if my_rsvp == 'Registered' %}
+                <div class="alert alert-success">✅ <b>You are Registered!</b></div>
+            {% elif my_rsvp == 'Pending Approval' %}
+                <div class="alert alert-warning">⏳ <b>Application Pending</b></div>
+            {% elif my_rsvp == 'Rejected' %}
+                <div class="alert alert-danger">🚫 <b>Application Declined</b></div>
+            {% else %}
+                
+                {% if doc.event_status == 'Open for Registration' %}
+                    <button class="btn btn-primary btn-lg" id="btn-register">Apply Now</button>
+                {% elif doc.event_status == 'Sold Out' %}
+                    <button class="btn btn-danger" disabled>🚫 Sold Out</button>
+                {% elif doc.event_status == 'Opening Soon' %}
+                    <button class="btn btn-secondary" disabled>⏳ Registration Opens Soon</button>
+                {% else %}
+                    <button class="btn btn-light" disabled>Registration Closed</button>
+                {% endif %}
+
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="prose max-w-none mt-8">
+        {{ doc.event_description }}
+    </div>
+
+</div>
+
+<script>
+    const btn = document.getElementById('btn-register');
+    if (btn) {
+        btn.onclick = function() {
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+
+            frappe.call({
+                method: "frappe.client.insert",
+                args: {
+                    doc: {
+                        doctype: "Event Attendee",
+                        event_activity: "{{ doc.name }}", 
+                    }
+                },
+                callback: function(r) {
+                    if(!r.exc) {
+                        frappe.msgprint({title: 'Success', indicator: 'green', message: 'Application sent!'});
+                        setTimeout(() => window.location.reload(), 2000);
+                    } else {
+                        btn.disabled = false;
+                        btn.innerText = "Apply Now";
+                    }
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}

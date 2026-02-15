@@ -1,0 +1,119 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format: ATT-{YYYY}-{MM}-{####}",
+ "creation": "2026-02-13 07:47:25.153209",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "registered_event_section",
+  "event_activity",
+  "column_break_ysdt",
+  "user",
+  "attendee_details_section",
+  "full_name",
+  "phone_number",
+  "column_break_spnh",
+  "email",
+  "date",
+  "section_break_hene",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "registered_event_section",
+   "fieldtype": "Section Break",
+   "label": "Registered Event"
+  },
+  {
+   "fieldname": "event_activity",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Event Activity",
+   "options": "Event Activity",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ysdt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attendee_details_section",
+   "fieldtype": "Section Break",
+   "label": "Attendee Details"
+  },
+  {
+   "fetch_from": "user.full_name",
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name"
+  },
+  {
+   "fetch_from": "user.phone",
+   "fieldname": "phone_number",
+   "fieldtype": "Data",
+   "label": "Phone Number"
+  },
+  {
+   "fieldname": "column_break_spnh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "user.email",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "default": "Now",
+   "fieldname": "date",
+   "fieldtype": "Datetime",
+   "label": "Date"
+  },
+  {
+   "fieldname": "section_break_hene",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "Pending Approval",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending Approval\nRegistered\nRejected\nCanceled"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-13 08:23:05.714717",
+ "modified_by": "Administrator",
+ "module": "Event Management",
+ "name": "Event Attendee",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
