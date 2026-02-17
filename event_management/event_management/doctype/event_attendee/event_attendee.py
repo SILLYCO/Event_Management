@@ -14,7 +14,6 @@ class EventAttendee(Document):
         if frappe.session.user == "Guest":
             frappe.throw("You must be logged in to register.")
         
-        # Set the User and Default Status
         self.user = frappe.session.user
         self.status = "Pending Approval"
 
@@ -25,7 +24,7 @@ class EventAttendee(Document):
         if user_details:
             self.full_name = user_details.full_name
             self.email = user_details.email
-            self.phone_number = user_details.mobile_no  # Maps User's mobile to your phone_number field
+            self.phone_number = user_details.mobile_no
 
         # 3. Check for Duplicate Applications
         # We check if this user has already applied (Pending) or is already Registered
@@ -47,10 +46,9 @@ class EventAttendee(Document):
 
     def validate(self):
         """
-        Runs on every save. checks permissions for Status Changes.
+        Runs on every save. Checks permissions for Status Changes.
         """
         # Security: Prevent regular users from approving themselves
-        # We check if the status is changing TO 'Registered'
         if self.status == "Registered" and self.db_get("status") != "Registered":
             if "System Manager" not in frappe.get_roles(frappe.session.user):
                 frappe.throw("Only Administrators can approve registrations.")
@@ -59,21 +57,12 @@ class EventAttendee(Document):
             self.check_capacity_and_reserve()
 
     def on_update(self):
-        """
-        Runs after the document is updated.
-        """
         self.update_event_status()
 
     def on_trash(self):
-        """
-        Runs when the document is deleted.
-        """
         self.update_event_status()
 
     def check_capacity_and_reserve(self):
-        """
-        Ensures we don't approve more people than the event capacity allows.
-        """
         event_doc = frappe.get_doc("Event Activity", self.event_activity)
         
         # Count only CONFIRMED (Registered) attendees
@@ -93,6 +82,34 @@ class EventAttendee(Document):
         
         if hasattr(event_doc, "update_status"):
             event_doc.update_status()
-            # Save without permission checks so users can trigger the update
             event_doc.flags.ignore_permissions = True
             event_doc.save()
+
+# --- NEW FUNCTION FOR CANCELLATION ---
+@frappe.whitelist()
+def cancel_registration(attendee_name):
+    """
+    API endpoint to cancel a registration.
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw("You must be logged in.")
+
+    if not frappe.db.exists("Event Attendee", attendee_name):
+        frappe.throw("Registration not found.")
+
+    doc = frappe.get_doc("Event Attendee", attendee_name)
+
+    # Security: Ensure the user owns this ticket
+    if doc.user != frappe.session.user:
+        frappe.throw("You are not authorized to cancel this registration.")
+
+    # Validation: Cannot cancel if event is over
+    event = frappe.get_doc("Event Activity", doc.event_activity)
+    if event.event_status == "Completed":
+        frappe.throw("Cannot cancel. The event has already ended.")
+
+    # Update Status
+    doc.status = "Canceled" # Ensure this matches your DocType option spelling
+    doc.save(ignore_permissions=True)
+    
+    return "success"
