@@ -148,23 +148,23 @@ app_license = "mit"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
 # 	"all": [
 # 		"event_management.tasks.all"
 # 	],
 # 	"daily": [
 # 		"event_management.tasks.daily"
 # 	],
-# 	"hourly": [
-# 		"event_management.tasks.hourly"
-# 	],
+	"hourly": [
+		"event_management.event_management.doctype.event_activity.event_activity.update_all_event_statuses"
+	],
 # 	"weekly": [
 # 		"event_management.tasks.weekly"
 # 	],
 # 	"monthly": [
 # 		"event_management.tasks.monthly"
 # 	],
-# }
+}
 
 # Testing
 # -------
@@ -239,6 +239,5 @@ app_license = "mit"
 # export_python_type_annotations = True
 
 # default_log_clearing_doctypes = {
-# 	"Logging DocType Name": 30  # days to retain logs
+# 	"Logging DocType Name": 30  # days to retain logs
 # }
-
