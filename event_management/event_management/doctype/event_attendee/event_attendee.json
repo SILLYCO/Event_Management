@@ -17,7 +17,9 @@
   "email",
   "date",
   "section_break_hene",
-  "status"
+  "status",
+  "section_break_lhqb",
+  "custom_answers"
  ],
  "fields": [
   {
@@ -87,12 +89,23 @@
    "fieldtype": "Select",
    "label": "Status",
    "options": "Pending Approval\nRegistered\nRejected\nCanceled"
+  },
+  {
+   "fieldname": "section_break_lhqb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "custom_answers",
+   "fieldtype": "Code",
+   "label": "Custom Answers",
+   "options": "JSON",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-13 08:23:05.714717",
+ "modified": "2026-02-18 16:18:18.553507",
  "modified_by": "Administrator",
  "module": "Event Management",
  "name": "Event Attendee",
