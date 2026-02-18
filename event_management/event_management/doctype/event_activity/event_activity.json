@@ -21,7 +21,9 @@
   "event_image",
   "section_break_njqc",
   "event_description",
-  "route"
+  "route",
+  "section_break_qvjt",
+  "custom_fields"
  ],
  "fields": [
   {
@@ -114,6 +116,16 @@
    "fieldname": "registration_start_date",
    "fieldtype": "Datetime",
    "label": "Registration Start Date"
+  },
+  {
+   "fieldname": "section_break_qvjt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "custom_fields",
+   "fieldtype": "Table",
+   "label": "Custom Questions",
+   "options": "Event Custom Field"
   }
  ],
  "grid_page_length": 50,
@@ -121,7 +133,7 @@
  "index_web_pages_for_search": 1,
  "is_published_field": "published",
  "links": [],
- "modified": "2026-02-17 04:38:59.106753",
+ "modified": "2026-02-18 16:14:53.535132",
  "modified_by": "Administrator",
  "module": "Event Management",
  "name": "Event Activity",
