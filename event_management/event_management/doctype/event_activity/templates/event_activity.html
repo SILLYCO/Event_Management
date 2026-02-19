@@ -209,7 +209,7 @@
                                     <h3 class="text-md font-semibold text-gray-800 mb-3">Additional Details</h3>
                                     <div class="space-y-4">
                                         {% for field in doc.custom_fields %}
-                                        <div>
+                                        <div class="custom-field-wrapper" data-depends-on="{{ field.depends_on or '' }}">
                                             <label class="block text-sm font-medium text-gray-700 mb-1">
                                                 {{ field.label }} {% if field.reqd %}<span class="text-red-500">*</span>{% endif %}
                                             </label>
@@ -246,7 +246,7 @@
                             
                             <div class="space-y-4">
                                 {% for field in doc.custom_fields %}
-                                <div>
+                                <div class="custom-field-wrapper" data-depends-on="{{ field.depends_on or '' }}">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">
                                         {{ field.label }} {% if field.reqd %}<span class="text-red-500">*</span>{% endif %}
                                     </label>
@@ -309,7 +309,59 @@
 </footer>
 
 <script>
-    // 1. Logic for Applying (Works for both New and Re-Apply because ID is same)
+    // --- DEPENDENCY LOGIC ---
+    function checkDependencies() {
+        const wrappers = document.querySelectorAll('.custom-field-wrapper');
+        
+        wrappers.forEach(wrapper => {
+            const dependsOn = wrapper.getAttribute('data-depends-on');
+            const inputInsideWrapper = wrapper.querySelector('.custom-field-input');
+            
+            // If there is a rule like "Transportation==Personal Vehicle"
+            if (dependsOn && dependsOn.trim() !== 'None' && dependsOn.trim() !== '') {
+                const parts = dependsOn.split('==');
+                if (parts.length === 2) {
+                    const targetLabel = parts[0].trim();
+                    const targetValue = parts[1].trim();
+
+                    // Find the question this field depends on
+                    const targetInput = document.querySelector(`.custom-field-input[name="${targetLabel}"]`);
+                    
+                    if (targetInput) {
+                        let currentValue = targetInput.value;
+                        if (targetInput.type === 'checkbox') {
+                            currentValue = targetInput.checked ? 'Yes' : 'No';
+                        }
+
+                        // If the answer matches, show the field. If not, hide it.
+                        if (currentValue === targetValue) {
+                            wrapper.style.display = 'block';
+                            if (inputInsideWrapper) inputInsideWrapper.disabled = false; // Enable it so it gets sent to backend
+                        } else {
+                            wrapper.style.display = 'none';
+                            if (inputInsideWrapper) inputInsideWrapper.disabled = true;  // Disable it so validation ignores it
+                        }
+                    }
+                }
+            } else {
+                // If there's no dependency rule, ensure it is shown
+                wrapper.style.display = 'block';
+                if (inputInsideWrapper) inputInsideWrapper.disabled = false;
+            }
+        });
+    }
+
+    // Attach listener to all inputs to trigger check when answers change
+    document.querySelectorAll('.custom-field-input').forEach(input => {
+        input.addEventListener('change', checkDependencies);
+        input.addEventListener('input', checkDependencies);
+    });
+
+    // Run once when the page loads to hide fields initially
+    checkDependencies();
+    // ------------------------
+
+    // 1. Logic for Applying (Works for both New and Re-Apply)
     const applyBtn = document.getElementById('btn-apply-sidebar');
     
     if (applyBtn) {
@@ -321,6 +373,9 @@
             const inputs = document.querySelectorAll('.custom-field-input');
             
             inputs.forEach(input => {
+                // SKIP IF FIELD IS HIDDEN BY DEPENDENCY
+                if (input.disabled) return; 
+
                 const label = input.name;
                 const isReqd = input.getAttribute('data-reqd') == '1';
                 let value = input.value;
