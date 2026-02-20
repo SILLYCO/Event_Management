@@ -112,9 +112,13 @@
                     </div>
                     <div>
                         <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Date & Time</p>
-                        <p class="text-charcoal font-bold text-lg leading-tight">{{ doc.get_formatted("start_date") }}</p>
+                        <p class="text-charcoal font-bold text-lg leading-tight">
+                            {{ frappe.utils.get_datetime(doc.start_date).strftime('%A, %d-%m-%Y %I:%M %p') }}
+                        </p>
                         {% if doc.end_date %}
-                            <p class="text-gray-600 text-sm">Until: {{ doc.get_formatted("end_date") }}</p>
+                            <p class="text-gray-600 text-sm">Until: 
+                                {{ frappe.utils.get_datetime(doc.end_date).strftime('%A, %d-%m-%Y %I:%M %p') }}
+                            </p>
                         {% endif %}
                     </div>
                 </div>
@@ -328,13 +332,13 @@
                     const targetInput = document.querySelector(`.custom-field-input[name="${targetLabel}"]`);
                     
                     if (targetInput) {
-                        let currentValue = targetInput.value;
+                        let currentValue = targetInput.value || '';
                         if (targetInput.type === 'checkbox') {
                             currentValue = targetInput.checked ? 'Yes' : 'No';
                         }
 
-                        // If the answer matches, show the field. If not, hide it.
-                        if (currentValue === targetValue) {
+                        // THE FIX: Added .trim() to currentValue to ignore accidental invisible spaces!
+                        if (currentValue.trim() === targetValue.trim()) {
                             wrapper.style.display = 'block';
                             if (inputInsideWrapper) inputInsideWrapper.disabled = false; // Enable it so it gets sent to backend
                         } else {
