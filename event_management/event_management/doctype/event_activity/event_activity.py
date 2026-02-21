@@ -36,6 +36,10 @@ class EventActivity(WebsiteGenerator):
         Checks time, capacity, and registration start date to set status automatically.
         Priority: Completed > Sold Out > Opening Soon > Open
         """
+        # --- THE FIX: Guard clause to protect manual overrides ---
+        if self.event_status == "Cancelled":
+            return
+        
         now = now_datetime()
 
         # 1. Check if Event is Completed (Time-based - Highest Priority)
@@ -76,9 +80,9 @@ def update_all_event_statuses():
     Scheduled job to update statuses for all non-completed events.
     Add this to your hooks.py under scheduler_events.
     """
-    # Fetch all events that are NOT completed
+    # THE FIX: Exclude both 'Completed' and 'Cancelled' from the daily check
     events = frappe.get_all("Event Activity", 
-        filters={"event_status": ["!=", "Completed"]}, 
+        filters={"event_status": ["not in", ["Completed", "Cancelled"]]}, 
         fields=["name"]
     )
 

@@ -41,13 +41,15 @@
 
 {% set my_rsvp = "None" %}
 {% set attendee_name = "" %}
+{% set rejection_reason = "" %}
 
 {% if frappe.session.user != 'Guest' %}
-    {% set attendee = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, ["name", "status"], as_dict=True) %}
+    {% set attendee = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, ["name", "status", "rejection_reason"], as_dict=True) %}
     
     {% if attendee %}
         {% set my_rsvp = attendee.status %}
         {% set attendee_name = attendee.name %}
+        {% set rejection_reason = attendee.rejection_reason %}
     {% endif %}
 {% endif %}
 
@@ -190,10 +192,20 @@
                         </div>
                     
                     {% elif my_rsvp == 'Rejected' %}
-                        <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 mb-4 flex items-center gap-3">
-                            <span class="material-symbols-outlined">cancel</span>
+                        <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 mb-4 flex items-start gap-3">
+                            <span class="material-symbols-outlined mt-0.5">cancel</span>
                             <div>
                                 <p class="font-bold">Application Declined</p>
+                                
+                                {% if rejection_reason %}
+                                    <p class="text-sm mt-1 text-red-700">
+                                        <span class="font-semibold">Reason:</span> {{ rejection_reason }}
+                                    </p>
+                                {% else %}
+                                    <p class="text-sm mt-1 text-red-700">
+                                        Unfortunately, your application could not be approved at this time.
+                                    </p>
+                                {% endif %}
                             </div>
                         </div>
 
