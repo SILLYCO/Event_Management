@@ -19,6 +19,7 @@
   "column_break_jiaw",
   "capacity",
   "event_image",
+  "service",
   "section_break_njqc",
   "event_description",
   "route",
@@ -126,6 +127,12 @@
    "fieldtype": "Table",
    "label": "Custom Questions",
    "options": "Event Custom Field"
+  },
+  {
+   "fieldname": "service",
+   "fieldtype": "Select",
+   "label": "Service",
+   "options": "\u0627\u0648\u0644\u0627\u062c \u0627\u0644\u0645\u0644\u0643\n\u0627\u0646\u0627 \u0627\u0645\u064a\u0631\u0629"
   }
  ],
  "grid_page_length": 50,
@@ -133,7 +140,7 @@
  "index_web_pages_for_search": 1,
  "is_published_field": "published",
  "links": [],
- "modified": "2026-02-18 16:14:53.535132",
+ "modified": "2026-02-22 16:00:53.685530",
  "modified_by": "Administrator",
  "module": "Event Management",
  "name": "Event Activity",
