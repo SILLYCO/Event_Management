@@ -19,6 +19,14 @@ def get_context(context):
             categories.add(e.event_category)
     context.categories = sorted(list(categories))
 
+    # --- NEW: Extract unique statuses for the dropdown filter ---
+    statuses = set()
+    for e in events:
+        if e.event_status:
+            statuses.add(e.event_status)
+    context.statuses = sorted(list(statuses))
+    # ------------------------------------------------------------
+
     # 3. Fetch user RSVPs and calculate Total Registered per event
     user_status_map = {}
     registered_counts = {}

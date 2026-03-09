@@ -67,9 +67,22 @@
                     {% endfor %}
                 </div>
                 
-                <div class="relative w-full md:w-96 group">
-                    <span class="material-symbols-outlined absolute left-4 top-3 text-gray-400 group-focus-within:text-primary transition-colors">search</span>
-                    <input type="text" id="event-search" placeholder="Search activities..." class="w-full pl-12 pr-4 py-3 bg-gray-50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-primary text-charcoal rounded-full outline-none transition-all shadow-inner focus:shadow-md focus:ring-4 focus:ring-primary/10">
+                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    
+                    <div class="relative w-full sm:w-48 group">
+                        <select id="status-filter" class="w-full pl-5 pr-10 py-3 appearance-none bg-gray-50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-primary text-charcoal rounded-full outline-none transition-all shadow-inner focus:shadow-md focus:ring-4 focus:ring-primary/10 font-medium cursor-pointer text-sm">
+                            <option value="all">All Statuses</option>
+                            {% for status in statuses %}
+                            <option value="{{ status }}">{{ status }}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="material-symbols-outlined absolute right-4 top-3 text-gray-400 pointer-events-none group-focus-within:text-primary transition-colors">expand_more</span>
+                    </div>
+
+                    <div class="relative w-full sm:w-80 group">
+                        <span class="material-symbols-outlined absolute left-4 top-3 text-gray-400 group-focus-within:text-primary transition-colors">search</span>
+                        <input type="text" id="event-search" placeholder="Search activities..." class="w-full pl-12 pr-4 py-3 bg-gray-50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-primary text-charcoal rounded-full outline-none transition-all shadow-inner focus:shadow-md focus:ring-4 focus:ring-primary/10">
+                    </div>
                 </div>
                 
             </div>
@@ -82,6 +95,7 @@
             {% for event in events %}
             <div class="event-card group relative flex flex-col bg-white rounded-[2rem] card-shadow hover:card-shadow-hover transition-all duration-500 hover:-translate-y-2 overflow-hidden animate-fade-in-up" 
                  data-category="{{ event.event_category }}" 
+                 data-status="{{ event.event_status }}"
                  data-title="{{ event.event_title | lower }}"
                  style="animation-delay: {{ loop.index0 * 0.08 }}s; opacity: 0;">
                 
@@ -210,10 +224,13 @@
 
             // Search and Filter Logic
             const searchInput = document.getElementById('event-search');
+            const statusFilter = document.getElementById('status-filter');
             const filterBtns = document.querySelectorAll('.filter-btn');
             const eventCards = document.querySelectorAll('.event-card');
             const noResultsMsg = document.getElementById('no-results-msg');
+            
             let activeCategory = 'all';
+            let activeStatus = 'all';
 
             function filterEvents() {
                 const searchTerm = searchInput.value.toLowerCase().trim();
@@ -222,11 +239,13 @@
                 eventCards.forEach(card => {
                     const title = card.getAttribute('data-title');
                     const category = card.getAttribute('data-category');
+                    const status = card.getAttribute('data-status');
                     
                     const matchesSearch = title.includes(searchTerm);
                     const matchesCategory = (activeCategory === 'all' || category === activeCategory);
+                    const matchesStatus = (activeStatus === 'all' || status === activeStatus);
 
-                    if (matchesSearch && matchesCategory) {
+                    if (matchesSearch && matchesCategory && matchesStatus) {
                         card.style.display = 'flex';
                         // Reset animation for satisfying pop-in
                         card.style.animation = 'none';
@@ -245,8 +264,16 @@
                 }
             }
 
+            // Listen for search input
             searchInput.addEventListener('input', filterEvents);
 
+            // Listen for status dropdown change
+            statusFilter.addEventListener('change', (e) => {
+                activeStatus = e.target.value;
+                filterEvents();
+            });
+
+            // Listen for category button clicks
             filterBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     // Reset all buttons

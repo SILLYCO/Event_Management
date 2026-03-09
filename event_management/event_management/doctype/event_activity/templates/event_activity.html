@@ -172,8 +172,14 @@
                                     <p class="text-xs">Your seat is confirmed.</p>
                                 </div>
                             </div>
-                            <button onclick="cancelRegistration('{{ attendee_name }}')" class="text-xs text-red-600 hover:text-red-800 font-semibold underline ml-9">
+                            <button onclick="cancelRegistration('{{ attendee_name }}')" class="text-xs text-red-600 hover:text-red-800 font-semibold underline ml-9 mb-4 block">
                                 Cancel my registration
+                            </button>
+                            
+                            <!-- Google Calendar Button -->
+                            <button onclick="addToGoogleCalendar()" class="mt-2 flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white hover:bg-charcoal text-gray-700 hover:text-white rounded-lg font-bold transition-all duration-300 shadow-sm border border-gray-200 hover:border-transparent text-sm">
+                                <span class="material-symbols-outlined text-[18px]">calendar_add_on</span>
+                                Add to Google Calendar
                             </button>
                         </div>
 
@@ -333,14 +339,12 @@
             const dependsOn = wrapper.getAttribute('data-depends-on');
             const inputInsideWrapper = wrapper.querySelector('.custom-field-input');
             
-            // If there is a rule like "Transportation==Personal Vehicle"
             if (dependsOn && dependsOn.trim() !== 'None' && dependsOn.trim() !== '') {
                 const parts = dependsOn.split('==');
                 if (parts.length === 2) {
                     const targetLabel = parts[0].trim();
                     const targetValue = parts[1].trim();
 
-                    // Find the question this field depends on
                     const targetInput = document.querySelector(`.custom-field-input[name="${targetLabel}"]`);
                     
                     if (targetInput) {
@@ -349,59 +353,50 @@
                             currentValue = targetInput.checked ? 'Yes' : 'No';
                         }
 
-                        // THE FIX: Added .trim() to currentValue to ignore accidental invisible spaces!
                         if (currentValue.trim() === targetValue.trim()) {
                             wrapper.style.display = 'block';
-                            if (inputInsideWrapper) inputInsideWrapper.disabled = false; // Enable it so it gets sent to backend
+                            if (inputInsideWrapper) inputInsideWrapper.disabled = false;
                         } else {
                             wrapper.style.display = 'none';
-                            if (inputInsideWrapper) inputInsideWrapper.disabled = true;  // Disable it so validation ignores it
+                            if (inputInsideWrapper) inputInsideWrapper.disabled = true;
                         }
                     }
                 }
             } else {
-                // If there's no dependency rule, ensure it is shown
                 wrapper.style.display = 'block';
                 if (inputInsideWrapper) inputInsideWrapper.disabled = false;
             }
         });
     }
 
-    // Attach listener to all inputs to trigger check when answers change
     document.querySelectorAll('.custom-field-input').forEach(input => {
         input.addEventListener('change', checkDependencies);
         input.addEventListener('input', checkDependencies);
     });
 
-    // Run once when the page loads to hide fields initially
     checkDependencies();
-    // ------------------------
 
     // 1. Logic for Applying (Works for both New and Re-Apply)
     const applyBtn = document.getElementById('btn-apply-sidebar');
     
     if (applyBtn) {
         applyBtn.onclick = function() {
-            // -- Start Validation & Data Collection --
             let custom_answers = {};
             let isValid = true;
 
             const inputs = document.querySelectorAll('.custom-field-input');
             
             inputs.forEach(input => {
-                // SKIP IF FIELD IS HIDDEN BY DEPENDENCY
                 if (input.disabled) return; 
 
                 const label = input.name;
                 const isReqd = input.getAttribute('data-reqd') == '1';
                 let value = input.value;
 
-                // Handle Checkboxes specifically
                 if (input.type === 'checkbox') {
                     value = input.checked ? 'Yes' : 'No';
                 }
 
-                // Validation: Check if empty and mandatory
                 if (isReqd && (!value || value === '')) {
                     isValid = false;
                     input.classList.add('border-red-500', 'ring-1', 'ring-red-500'); 
@@ -420,9 +415,7 @@
                 });
                 return;
             }
-            // -- End Validation --
 
-            // Proceed with API Call
             applyBtn.disabled = true;
             applyBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Processing...';
 
@@ -474,6 +467,40 @@
                 }
             }
         });
+    }
+
+    // 3. Logic for Add to Google Calendar Directly
+    function addToGoogleCalendar() {
+        // Encode text so it works safely in a URL
+        const title = encodeURIComponent("{{ doc.event_title }}");
+        const description = encodeURIComponent("{{ doc.event_description | striptags | replace('\n', ' ') | replace('\r', '') }}");
+        
+        const startDate = "{{ doc.start_date | replace(' ', 'T') }}";
+        const endDate = "{{ doc.end_date | replace(' ', 'T') if doc.end_date else '' }}";
+
+        // Format dates into exactly what Google URL requires (YYYYMMDDTHHMMSSZ)
+        const formatGoogleDate = (dateString) => {
+            if (!dateString) return null;
+            const d = new Date(dateString);
+            if (isNaN(d.getTime())) return null;
+            return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        };
+
+        const dtStart = formatGoogleDate(startDate);
+        let dtEnd = formatGoogleDate(endDate);
+
+        // Fallback: Default to 1 hour duration if no end_date was set
+        if (!dtEnd && dtStart) {
+            const d = new Date(startDate);
+            d.setHours(d.getHours() + 1);
+            dtEnd = d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        }
+
+        // Build the Google Calendar URL
+        const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dtStart}/${dtEnd}&details=${description}`;
+
+        // Open Google Calendar in a new tab
+        window.open(googleUrl, '_blank');
     }
 </script>
 
