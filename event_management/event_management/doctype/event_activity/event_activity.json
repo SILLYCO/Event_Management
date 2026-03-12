@@ -25,6 +25,12 @@
   "route",
   "section_break_qvjt",
   "custom_fields",
+  "pricing_and_payment_section",
+  "column_break_ibpw",
+  "is_paid",
+  "column_break_kefo",
+  "ticket_price",
+  "payment_instructions",
   "approval_instructions_section",
   "attendee_instructions",
   "attendee_attachment"
@@ -151,6 +157,39 @@
    "fieldname": "attendee_attachment",
    "fieldtype": "Attach",
    "label": "Attendee Attachment"
+  },
+  {
+   "fieldname": "pricing_and_payment_section",
+   "fieldtype": "Section Break",
+   "label": "Pricing and Payment"
+  },
+  {
+   "depends_on": "eval:doc.is_paid == \"Paid\"",
+   "fieldname": "column_break_ibpw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Free",
+   "fieldname": "is_paid",
+   "fieldtype": "Select",
+   "label": "Event Type",
+   "options": "Free\nPaid"
+  },
+  {
+   "fieldname": "column_break_kefo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.is_paid == \"Paid\"",
+   "fieldname": "ticket_price",
+   "fieldtype": "Currency",
+   "label": "Ticket Price"
+  },
+  {
+   "depends_on": "eval:doc.is_paid == \"Paid\"",
+   "fieldname": "payment_instructions",
+   "fieldtype": "Text Editor",
+   "label": "Payment Instructions"
   }
  ],
  "grid_page_length": 50,
@@ -158,7 +197,7 @@
  "index_web_pages_for_search": 1,
  "is_published_field": "published",
  "links": [],
- "modified": "2026-03-09 17:36:48.496893",
+ "modified": "2026-03-12 16:23:27.926478",
  "modified_by": "Administrator",
  "module": "Event Management",
  "name": "Event Activity",

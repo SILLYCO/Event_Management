@@ -124,6 +124,20 @@
                         {% endif %}
                     </div>
                 </div>
+
+                {% if doc.is_paid == 'Paid' and doc.ticket_price %}
+                <div class="p-6 rounded-xl bg-light-gray border border-border-gray flex items-start gap-4">
+                    <div class="p-3 rounded-lg bg-white shadow-sm text-green-600 border border-border-gray">
+                        <span class="material-symbols-outlined">local_activity</span>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Ticket Cost</p>
+                        <p class="text-charcoal font-black text-2xl leading-tight">
+                            {{ doc.ticket_price }}
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             <section>
@@ -240,6 +254,39 @@
                             </button>
                         </div>
                     
+                    {% elif my_rsvp == 'Pending Transaction' %}
+                        <div class="p-5 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 mb-4 shadow-sm">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="material-symbols-outlined text-orange-500 text-3xl">payments</span>
+                                <div>
+                                    <p class="font-black text-lg leading-tight">Awaiting Payment</p>
+                                    <p class="text-xs font-medium opacity-80">Your spot is reserved, pending payment.</p>
+                                </div>
+                            </div>
+
+                            {% if doc.is_paid == 'Paid' and doc.ticket_price %}
+                            <div class="bg-white p-4 rounded-xl border border-orange-100 mb-4 text-center shadow-inner">
+                                <p class="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">Total Due</p>
+                                <p class="text-3xl font-black text-charcoal">{{ doc.ticket_price }}</p>
+                            </div>
+                            {% endif %}
+
+                            {% if doc.payment_instructions %}
+                            <div class="bg-white/60 p-4 rounded-xl border border-orange-100 mb-5">
+                                <p class="text-[10px] text-orange-800 uppercase tracking-widest font-black mb-2 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]">info</span> Instructions
+                                </p>
+                                <div class="prose prose-sm max-w-none text-gray-700 leading-snug">
+                                    {{ doc.payment_instructions }}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <button onclick="cancelRegistration('{{ attendee_name }}')" class="text-xs text-red-500 hover:text-red-700 font-bold underline block text-center w-full transition-colors">
+                                Cancel request
+                            </button>
+                        </div>
+
                     {% elif my_rsvp == 'Rejected' %}
                         <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 mb-4 flex items-start gap-3">
                             <span class="material-symbols-outlined mt-0.5">cancel</span>
@@ -514,14 +561,12 @@
 
     // 3. Logic for Add to Google Calendar Directly
     function addToGoogleCalendar() {
-        // Encode text so it works safely in a URL
         const title = encodeURIComponent("{{ doc.event_title }}");
         const description = encodeURIComponent("{{ doc.event_description | striptags | replace('\n', ' ') | replace('\r', '') }}");
         
         const startDate = "{{ doc.start_date | replace(' ', 'T') }}";
         const endDate = "{{ doc.end_date | replace(' ', 'T') if doc.end_date else '' }}";
 
-        // Format dates into exactly what Google URL requires (YYYYMMDDTHHMMSSZ)
         const formatGoogleDate = (dateString) => {
             if (!dateString) return null;
             const d = new Date(dateString);
@@ -532,17 +577,14 @@
         const dtStart = formatGoogleDate(startDate);
         let dtEnd = formatGoogleDate(endDate);
 
-        // Fallback: Default to 1 hour duration if no end_date was set
         if (!dtEnd && dtStart) {
             const d = new Date(startDate);
             d.setHours(d.getHours() + 1);
             dtEnd = d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         }
 
-        // Build the Google Calendar URL
         const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dtStart}/${dtEnd}&details=${description}`;
 
-        // Open Google Calendar in a new tab
         window.open(googleUrl, '_blank');
     }
 </script>
