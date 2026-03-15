@@ -56,6 +56,27 @@ class EventAttendee(Document):
             # If Admin approves, we check if there is actual space left
             self.check_capacity_and_reserve()
 
+    def before_save(self):
+        """
+        Runs before saving. Calculates the final price if promo codes are used.
+        """
+        if self.event_is_paid == "Paid":
+            base_price = float(self.event_price or 0.0)
+            
+            # If a promo code is applied, calculate the discount
+            if self.promo_code:
+                try:
+                    promo = frappe.get_doc("Event Promo Code", self.promo_code)
+                    if promo.active:
+                        discount_amt = base_price * (float(promo.discount_percentage) / 100.0)
+                        self.final_price = base_price - discount_amt
+                    else:
+                        self.final_price = base_price
+                except frappe.DoesNotExistError:
+                    self.final_price = base_price
+            else:
+                self.final_price = base_price
+
     def on_update(self):
         self.update_event_status()
 

@@ -22,6 +22,8 @@
   "rejection_reason",
   "payment_details_section",
   "event_price",
+  "promo_code",
+  "final_price",
   "column_break_jelh",
   "payment_method",
   "column_break_btes",
@@ -154,12 +156,24 @@
    "fieldname": "paid_amount",
    "fieldtype": "Currency",
    "label": "Paid Amount"
+  },
+  {
+   "fieldname": "promo_code",
+   "fieldtype": "Link",
+   "label": "Promo Code",
+   "options": "Event Promo Code"
+  },
+  {
+   "fieldname": "final_price",
+   "fieldtype": "Currency",
+   "label": "Final Price",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-12 16:53:05.439801",
+ "modified": "2026-03-15 13:35:19.713544",
  "modified_by": "Administrator",
  "module": "Event Management",
  "name": "Event Attendee",

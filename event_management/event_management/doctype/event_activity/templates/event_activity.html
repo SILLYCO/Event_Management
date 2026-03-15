@@ -42,14 +42,18 @@
 {% set my_rsvp = "None" %}
 {% set attendee_name = "" %}
 {% set rejection_reason = "" %}
+{% set my_final_price = doc.ticket_price %}
 
 {% if frappe.session.user != 'Guest' %}
-    {% set attendee = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, ["name", "status", "rejection_reason"], as_dict=True) %}
+    {% set attendee = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, ["name", "status", "rejection_reason", "final_price"], as_dict=True) %}
     
     {% if attendee %}
         {% set my_rsvp = attendee.status %}
         {% set attendee_name = attendee.name %}
         {% set rejection_reason = attendee.rejection_reason %}
+        {% if attendee.final_price is not none %}
+            {% set my_final_price = attendee.final_price %}
+        {% endif %}
     {% endif %}
 {% endif %}
 
@@ -264,10 +268,10 @@
                                 </div>
                             </div>
 
-                            {% if doc.is_paid == 'Paid' and doc.ticket_price %}
+                            {% if doc.is_paid == 'Paid' and my_final_price is not none %}
                             <div class="bg-white p-4 rounded-xl border border-orange-100 mb-4 text-center shadow-inner">
                                 <p class="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">Total Due</p>
-                                <p class="text-3xl font-black text-charcoal">{{ doc.ticket_price }}</p>
+                                <p class="text-3xl font-black text-charcoal">{{ my_final_price }}</p>
                             </div>
                             {% endif %}
 
@@ -344,6 +348,25 @@
                                     </div>
                                 </div>
                              {% endif %}
+
+                             {% if doc.is_paid == 'Paid' %}
+                             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                                 <label class="block text-sm font-medium text-gray-700 mb-2">Have a Promo Code?</label>
+                                 <div class="flex gap-2">
+                                     <input type="text" id="promo-code-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary uppercase font-bold text-gray-700" placeholder="ENTER CODE">
+                                     <button type="button" id="btn-apply-promo" class="px-4 py-2 bg-charcoal hover:bg-gray-800 text-white text-sm font-bold rounded-md transition-colors shadow-sm">Apply</button>
+                                 </div>
+                                 <p id="promo-message" class="text-xs mt-2 hidden"></p>
+                                 <hr class="my-3 border-gray-200">
+                                 <div class="flex justify-between items-center">
+                                     <span class="font-bold text-gray-600 text-sm">Total Due:</span>
+                                     <div class="text-right flex items-center gap-2">
+                                         <span id="original-price" class="text-lg font-black text-charcoal">{{ doc.ticket_price }}</span>
+                                         <span id="discounted-price" class="text-xl font-black text-green-600 hidden"></span>
+                                     </div>
+                                 </div>
+                             </div>
+                             {% endif %}
                              <button id="btn-apply-sidebar" class="w-full py-4 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold shadow-lg shadow-primary/20 transition-all mb-4 flex justify-center items-center gap-2">
                                 <span>Re-Apply Now</span>
                                 <span class="material-symbols-outlined">refresh</span>
@@ -384,6 +407,25 @@
                         {% endif %}
 
                         {% if doc.event_status == 'Open for Registration' %}
+
+                            {% if doc.is_paid == 'Paid' %}
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Have a Promo Code?</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="promo-code-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary uppercase font-bold text-gray-700" placeholder="ENTER CODE">
+                                    <button type="button" id="btn-apply-promo" class="px-4 py-2 bg-charcoal hover:bg-gray-800 text-white text-sm font-bold rounded-md transition-colors shadow-sm">Apply</button>
+                                </div>
+                                <p id="promo-message" class="text-xs mt-2 hidden"></p>
+                                <hr class="my-3 border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-bold text-gray-600 text-sm">Total Due:</span>
+                                    <div class="text-right flex items-center gap-2">
+                                        <span id="original-price" class="text-lg font-black text-charcoal">{{ doc.ticket_price }}</span>
+                                        <span id="discounted-price" class="text-xl font-black text-green-600 hidden"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                             <button id="btn-apply-sidebar" class="w-full py-4 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold shadow-lg shadow-primary/20 transition-all mb-4 flex justify-center items-center gap-2">
                                 <span>Apply Now</span>
                                 <span class="material-symbols-outlined">send</span>
@@ -466,26 +508,73 @@
 
     checkDependencies();
 
-    // 1. Logic for Applying (Works for both New and Re-Apply)
+    // 1. Logic for Promo Codes & Applying
+    let appliedPromoCode = "";
+    const basePrice = parseFloat("{{ doc.ticket_price or 0 }}");
+
+    // Promo Code Validation
+    const applyPromoBtn = document.getElementById('btn-apply-promo');
+    if (applyPromoBtn) {
+        applyPromoBtn.onclick = function() {
+            const codeInput = document.getElementById('promo-code-input').value.trim().toUpperCase();
+            const msg = document.getElementById('promo-message');
+            const origPrice = document.getElementById('original-price');
+            const discPrice = document.getElementById('discounted-price');
+
+            if(!codeInput) return;
+
+            applyPromoBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">refresh</span>';
+            
+            frappe.call({
+                method: "frappe.client.get",
+                args: { doctype: "Event Promo Code", name: codeInput },
+                callback: function(r) {
+                    applyPromoBtn.innerHTML = 'Apply';
+                    if(r.message && r.message.active) {
+                        const discount = r.message.discount_percentage;
+                        const newPrice = basePrice - (basePrice * (discount / 100));
+                        
+                        appliedPromoCode = codeInput; // Store it to send later
+                        
+                        msg.textContent = `Success! ${discount}% discount applied.`;
+                        msg.className = "text-xs mt-2 text-green-600 font-bold block";
+                        document.getElementById('promo-code-input').classList.add('border-green-500', 'bg-green-50');
+                        
+                        origPrice.classList.add("line-through", "text-gray-400", "text-sm");
+                        origPrice.classList.remove("text-lg", "text-charcoal");
+                        
+                        discPrice.textContent = newPrice.toFixed(2);
+                        discPrice.classList.remove("hidden");
+                    } else {
+                        msg.textContent = "Invalid or inactive promo code.";
+                        msg.className = "text-xs mt-2 text-red-500 font-bold block";
+                        document.getElementById('promo-code-input').classList.remove('border-green-500', 'bg-green-50');
+                        
+                        appliedPromoCode = "";
+                        origPrice.classList.remove("line-through", "text-gray-400", "text-sm");
+                        origPrice.classList.add("text-lg", "text-charcoal");
+                        discPrice.classList.add("hidden");
+                    }
+                }
+            });
+        };
+    }
+
+    // Main Registration Submit
     const applyBtn = document.getElementById('btn-apply-sidebar');
-    
     if (applyBtn) {
         applyBtn.onclick = function() {
             let custom_answers = {};
             let isValid = true;
-
             const inputs = document.querySelectorAll('.custom-field-input');
             
             inputs.forEach(input => {
                 if (input.disabled) return; 
-
                 const label = input.name;
                 const isReqd = input.getAttribute('data-reqd') == '1';
                 let value = input.value;
 
-                if (input.type === 'checkbox') {
-                    value = input.checked ? 'Yes' : 'No';
-                }
+                if (input.type === 'checkbox') value = input.checked ? 'Yes' : 'No';
 
                 if (isReqd && (!value || value === '')) {
                     isValid = false;
@@ -493,16 +582,11 @@
                 } else {
                     input.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
                 }
-
                 custom_answers[label] = value;
             });
 
             if (!isValid) {
-                frappe.msgprint({
-                    title: 'Missing Details',
-                    message: 'Please fill in all mandatory fields marked with *',
-                    indicator: 'red'
-                });
+                frappe.msgprint({ title: 'Missing Details', message: 'Please fill in all mandatory fields.', indicator: 'red' });
                 return;
             }
 
@@ -515,16 +599,13 @@
                     doc: {
                         doctype: "Event Attendee",
                         event_activity: "{{ doc.name }}",
-                        custom_answers: JSON.stringify(custom_answers)
+                        custom_answers: JSON.stringify(custom_answers),
+                        promo_code: appliedPromoCode // Passing the promo code!
                     }
                 },
                 callback: function(r) {
                     if(!r.exc) {
-                        frappe.msgprint({
-                            title: 'Success',
-                            indicator: 'green',
-                            message: 'Application sent successfully!'
-                        });
+                        frappe.msgprint({ title: 'Success', indicator: 'green', message: 'Application sent successfully!' });
                         setTimeout(() => window.location.reload(), 1500);
                     } else {
                         applyBtn.disabled = false;
