@@ -1,0 +1,155 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+</head>
+<body class="bg-gray-100 min-h-screen pb-10">
+
+{% if frappe.session.user == 'Guest' %}
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-lg text-center w-full max-w-md">
+            <span class="material-symbols-outlined text-6xl text-red-500 mb-4">gpp_maybe</span>
+            <h2 class="text-2xl font-black text-gray-800 mb-2">Access Denied</h2>
+            <p class="text-gray-500 mb-6">You must be logged in as an Organizer to access the scanner.</p>
+            <a href="/login?redirect-to=/checkin" class="block w-full py-3 bg-blue-600 text-white font-bold rounded-xl">Log In</a>
+        </div>
+    </div>
+{% else %}
+
+    <div class="bg-blue-600 text-white p-6 rounded-b-3xl shadow-md mb-6">
+        <h1 class="text-2xl font-black flex items-center gap-2">
+            <span class="material-symbols-outlined">qr_code_scanner</span>
+            Event Check-In
+        </h1>
+        <p class="text-blue-100 text-sm mt-1">Point your camera at the Servant QR Code.</p>
+    </div>
+
+    <div class="max-w-md mx-auto px-4 space-y-6">
+        
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Select Event</label>
+            <select id="event-selector" class="w-full p-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-800 font-bold focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="">-- Choose an Event --</option>
+                
+                {% set active_events = frappe.get_all("Event Activity", filters={"event_status": ["!=", "Completed"]}, fields=["name", "event_title"]) %}
+                {% for evt in active_events %}
+                    <option value="{{ evt.name }}">{{ evt.event_title }}</option>
+                {% endfor %}
+                
+            </select>
+        </div>
+
+        <div class="bg-white p-2 rounded-2xl shadow-lg border-2 border-blue-100 overflow-hidden relative">
+            <div id="reader" width="100%"></div>
+            
+            <div id="scan-overlay" class="absolute inset-0 bg-white/90 z-10 hidden flex-col items-center justify-center">
+                <span class="material-symbols-outlined text-5xl animate-spin text-blue-500 mb-2">autorenew</span>
+                <p class="font-bold text-gray-700">Processing...</p>
+            </div>
+        </div>
+
+        <div id="result-card" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 hidden text-center transition-all duration-300">
+            <span id="result-icon" class="material-symbols-outlined text-5xl mb-2"></span>
+            <h3 id="result-title" class="text-xl font-black mb-1"></h3>
+            <p id="result-message" class="text-sm text-gray-600"></p>
+        </div>
+
+    </div>
+
+    <audio id="beep-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
+<script>
+    let html5QrcodeScanner;
+    let isProcessing = false;
+
+    // Setup the Scanner
+    function onScanSuccess(decodedText, decodedResult) {
+        // Stop scanning if we are currently processing a ticket or no event is selected
+        if (isProcessing) return;
+        
+        const selectedEvent = document.getElementById("event-selector").value;
+        if (!selectedEvent) {
+            showResult("error", "Error", "Please select an event from the dropdown first.");
+            return;
+        }
+
+        isProcessing = true;
+        document.getElementById("scan-overlay").classList.remove("hidden");
+        document.getElementById("scan-overlay").classList.add("flex");
+
+        // Send the QR data to our Python backend
+        frappe.call({
+            method: "event_management.event_management.doctype.event_attendee.event_attendee.process_qr_checkin",
+            args: {
+                qr_text: decodedText,
+                event_name: selectedEvent
+            },
+            callback: function(r) {
+                document.getElementById("scan-overlay").classList.add("hidden");
+                document.getElementById("scan-overlay").classList.remove("flex");
+                
+                if (r.message && r.message.status === "success") {
+                    document.getElementById("beep-sound").play();
+                    showResult("success", "Checked In!", r.message.message);
+                } else if (r.message && r.message.status === "warning") {
+                    showResult("warning", "Already Scanned", r.message.message);
+                } else {
+                    showResult("error", "Invalid", r.message ? r.message.message : "Unknown error.");
+                }
+
+                // Wait 2.5 seconds before allowing the next scan
+                setTimeout(() => {
+                    document.getElementById("result-card").classList.add("hidden");
+                    isProcessing = false;
+                }, 2500);
+            }
+        });
+    }
+
+    function showResult(type, title, message) {
+        const card = document.getElementById("result-card");
+        const icon = document.getElementById("result-icon");
+        const titleEl = document.getElementById("result-title");
+        const msgEl = document.getElementById("result-message");
+
+        card.classList.remove("hidden");
+        
+        if (type === "success") {
+            icon.textContent = "check_circle";
+            icon.className = "material-symbols-outlined text-6xl mb-2 text-green-500";
+            titleEl.className = "text-xl font-black mb-1 text-green-700";
+        } else if (type === "warning") {
+            icon.textContent = "info";
+            icon.className = "material-symbols-outlined text-6xl mb-2 text-orange-500";
+            titleEl.className = "text-xl font-black mb-1 text-orange-700";
+        } else {
+            icon.textContent = "cancel";
+            icon.className = "material-symbols-outlined text-6xl mb-2 text-red-500";
+            titleEl.className = "text-xl font-black mb-1 text-red-700";
+        }
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+    }
+
+    // Initialize the Scanner UI
+    document.addEventListener("DOMContentLoaded", function() {
+        html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", 
+            { fps: 10, qrbox: {width: 250, height: 250}, aspectRatio: 1.0 }, 
+            /* verbose= */ false
+        );
+        html5QrcodeScanner.render(onScanSuccess);
+    });
+</script>
+
+{% endif %}
+</body>
+</html>
+{% endblock %}

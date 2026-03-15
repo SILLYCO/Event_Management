@@ -29,7 +29,9 @@
   "column_break_btes",
   "paid_amount",
   "section_break_lhqb",
-  "custom_answers"
+  "custom_answers",
+  "attendance_status_section",
+  "attended"
  ],
  "fields": [
   {
@@ -168,12 +170,23 @@
    "fieldtype": "Currency",
    "label": "Final Price",
    "read_only": 1
+  },
+  {
+   "fieldname": "attendance_status_section",
+   "fieldtype": "Section Break",
+   "label": "Attendance Status"
+  },
+  {
+   "default": "0",
+   "fieldname": "attended",
+   "fieldtype": "Check",
+   "label": "Attended"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-15 13:35:19.713544",
+ "modified": "2026-03-15 15:14:38.092460",
  "modified_by": "Administrator",
  "module": "Event Management",
  "name": "Event Attendee",

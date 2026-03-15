@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+import json
 from frappe.model.document import Document
 
 class EventAttendee(Document):
@@ -134,3 +135,66 @@ def cancel_registration(attendee_name):
     doc.save(ignore_permissions=True)
     
     return "success"
+
+
+# --- QR CODE CHECK-IN API ---
+@frappe.whitelist()
+def process_qr_checkin(qr_text, event_name):
+    """
+    Takes the scanned JSON QR string, finds the Servant, maps it to the User email, 
+    and checks them into the Event Attendee record.
+    """
+    # Security: Only admins/event managers should be able to check people in
+    if "System Manager" not in frappe.get_roles(frappe.session.user):
+        return {"status": "error", "message": "Not authorized to perform check-ins."}
+
+    try:
+        # 1. Decode the JSON from the scanner
+        qr_data = json.loads(qr_text)
+        servant_id = qr_data.get("refrance_id")
+
+        if not servant_id:
+            return {"status": "error", "message": "Invalid QR: Missing refrance_id."}
+
+        # 2. Find the Servant profile
+        if not frappe.db.exists("Servant", servant_id):
+            return {"status": "error", "message": f"Servant {servant_id} not found."}
+
+        # 3. Get the Servant's Email 
+        # (Checking both common naming conventions based on your screenshot)
+        servant_email = frappe.db.get_value("Servant", servant_id, "email_address")
+        if not servant_email:
+            servant_email = frappe.db.get_value("Servant", servant_id, "email")
+        
+        if not servant_email:
+            return {"status": "error", "message": f"Servant {servant_id} has no email address on their profile."}
+
+        # 4. Find their Event Attendee record
+        attendee = frappe.db.get_value("Event Attendee", {
+            "event_activity": event_name,
+            "user": servant_email
+        }, ["name", "status", "attended", "full_name"], as_dict=True)
+
+        if not attendee:
+            return {"status": "error", "message": f"User ({servant_email}) is not registered for this event."}
+
+        # 5. Validate their status (Must be Registered!)
+        if attendee.status != "Registered":
+            return {"status": "error", "message": f"Cannot check in. Attendee status is: {attendee.status}"}
+
+        # 6. Check if they already checked in
+        if attendee.attended:
+            return {"status": "warning", "message": f"{attendee.full_name} is already checked in!"}
+
+        # 7. Success! Mark as attended.
+        frappe.db.set_value("Event Attendee", attendee.name, "attended", 1)
+        
+        return {
+            "status": "success", 
+            "message": f"Successfully checked in {attendee.full_name}!"
+        }
+
+    except json.JSONDecodeError:
+        return {"status": "error", "message": "Invalid QR format (Not valid JSON)."}
+    except Exception as e:
+        return {"status": "error", "message": f"Server error: {str(e)}"}
