@@ -234,9 +234,12 @@
                                     <p class="text-xs">Your seat is confirmed.</p>
                                 </div>
                             </div>
+                            
+                            {% if doc.event_status != 'Completed' %}
                             <button onclick="cancelRegistration('{{ attendee_name }}')" class="text-xs text-red-600 hover:text-red-800 font-semibold underline ml-9 mb-4 block">
                                 Cancel my registration
                             </button>
+                            {% endif %}
                             
                             <button onclick="addToGoogleCalendar()" class="mt-2 flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white hover:bg-charcoal text-gray-700 hover:text-white rounded-lg font-bold transition-all duration-300 shadow-sm border border-gray-200 hover:border-transparent text-sm">
                                 <span class="material-symbols-outlined text-[18px]">calendar_add_on</span>
@@ -253,9 +256,12 @@
                                     <p class="text-xs">Waiting for admin approval.</p>
                                 </div>
                             </div>
+                            
+                            {% if doc.event_status != 'Completed' %}
                             <button onclick="cancelRegistration('{{ attendee_name }}')" class="text-xs text-red-600 hover:text-red-800 font-semibold underline ml-9">
                                 Cancel request
                             </button>
+                            {% endif %}
                         </div>
                     
                     {% elif my_rsvp == 'Pending Transaction' %}
@@ -285,10 +291,12 @@
                                 </div>
                             </div>
                             {% endif %}
-
+                            
+                            {% if doc.event_status != 'Completed' %}
                             <button onclick="cancelRegistration('{{ attendee_name }}')" class="text-xs text-red-500 hover:text-red-700 font-bold underline block text-center w-full transition-colors">
                                 Cancel request
                             </button>
+                            {% endif %}
                         </div>
 
                     {% elif my_rsvp == 'Rejected' %}
