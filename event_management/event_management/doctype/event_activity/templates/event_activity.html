@@ -342,7 +342,7 @@
                                             {% elif field.fieldtype == 'Select' %}
                                                 <select name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                                                     <option value="">Select {{ field.label }}...</option>
-                                                    {% set options = field.options.split('\n') %}
+                                                    {% set options = (field.options or '').split('\n') %}
                                                     {% for opt in options %}{% if opt %}<option value="{{ opt }}">{{ opt }}</option>{% endif %}{% endfor %}
                                                 </select>
                                             {% elif field.fieldtype == 'Check' %}
@@ -383,39 +383,41 @@
 
                     {% else %}
                         
-                        {% if doc.custom_fields %}
-                        <div id="custom-questions-container" class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
-                            <h3 class="text-md font-semibold text-gray-800 mb-3">Additional Details</h3>
-                            
-                            <div class="space-y-4">
-                                {% for field in doc.custom_fields %}
-                                <div class="custom-field-wrapper" data-depends-on="{{ field.depends_on or '' }}">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                                        {{ field.label }} {% if field.reqd %}<span class="text-red-500">*</span>{% endif %}
-                                    </label>
-
-                                    {% if field.fieldtype == 'Data' %}
-                                        <input type="text" name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    {% elif field.fieldtype == 'Select' %}
-                                        <select name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                                            <option value="">Select {{ field.label }}...</option>
-                                            {% set options = field.options.split('\n') %}
-                                            {% for opt in options %}{% if opt %}<option value="{{ opt }}">{{ opt }}</option>{% endif %}{% endfor %}
-                                        </select>
-                                    {% elif field.fieldtype == 'Check' %}
-                                        <div class="flex items-center mt-2">
-                                            <input type="checkbox" name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                            <span class="ml-2 text-sm text-gray-700">{{ field.label }}</span>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% endif %}
-
                         {% if doc.event_status == 'Open for Registration' %}
 
+                            <!-- Custom Questions only show if the event is Open -->
+                            {% if doc.custom_fields %}
+                            <div id="custom-questions-container" class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                                <h3 class="text-md font-semibold text-gray-800 mb-3">Additional Details</h3>
+                                
+                                <div class="space-y-4">
+                                    {% for field in doc.custom_fields %}
+                                    <div class="custom-field-wrapper" data-depends-on="{{ field.depends_on or '' }}">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                                            {{ field.label }} {% if field.reqd %}<span class="text-red-500">*</span>{% endif %}
+                                        </label>
+
+                                        {% if field.fieldtype == 'Data' %}
+                                            <input type="text" name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        {% elif field.fieldtype == 'Select' %}
+                                            <select name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                                <option value="">Select {{ field.label }}...</option>
+                                                {% set options = (field.options or '').split('\n') %}
+                                                {% for opt in options %}{% if opt %}<option value="{{ opt }}">{{ opt }}</option>{% endif %}{% endfor %}
+                                            </select>
+                                        {% elif field.fieldtype == 'Check' %}
+                                            <div class="flex items-center mt-2">
+                                                <input type="checkbox" name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                                <span class="ml-2 text-sm text-gray-700">{{ field.label }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- PROMO CODE UI (For New Applications) -->
                             {% if doc.is_paid == 'Paid' %}
                             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Have a Promo Code?</label>
@@ -434,6 +436,8 @@
                                 </div>
                             </div>
                             {% endif %}
+                            <!-- END PROMO CODE UI -->
+
                             <button id="btn-apply-sidebar" class="w-full py-4 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold shadow-lg shadow-primary/20 transition-all mb-4 flex justify-center items-center gap-2">
                                 <span>Apply Now</span>
                                 <span class="material-symbols-outlined">send</span>
@@ -534,15 +538,19 @@
             applyPromoBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">refresh</span>';
             
             frappe.call({
-                method: "frappe.client.get",
-                args: { doctype: "Event Promo Code", name: codeInput },
+                method: "event_management.event_management.doctype.event_attendee.event_attendee.validate_promo_code",
+                args: { 
+                    promo_code: codeInput,
+                    event_name: "{{ doc.name }}" 
+                },
                 callback: function(r) {
                     applyPromoBtn.innerHTML = 'Apply';
-                    if(r.message && r.message.active) {
+                    
+                    if(r.message && r.message.valid) {
                         const discount = r.message.discount_percentage;
                         const newPrice = basePrice - (basePrice * (discount / 100));
                         
-                        appliedPromoCode = codeInput; // Store it to send later
+                        appliedPromoCode = codeInput; 
                         
                         msg.textContent = `Success! ${discount}% discount applied.`;
                         msg.className = "text-xs mt-2 text-green-600 font-bold block";
@@ -554,7 +562,7 @@
                         discPrice.textContent = newPrice.toFixed(2);
                         discPrice.classList.remove("hidden");
                     } else {
-                        msg.textContent = "Invalid or inactive promo code.";
+                        msg.textContent = r.message ? r.message.message : "Invalid promo code.";
                         msg.className = "text-xs mt-2 text-red-500 font-bold block";
                         document.getElementById('promo-code-input').classList.remove('border-green-500', 'bg-green-50');
                         
