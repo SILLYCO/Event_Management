@@ -173,7 +173,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-15 13:35:19.713544",
+ "modified": "2026-07-12 05:42:27.029768",
  "modified_by": "Administrator",
  "module": "Event Management",
  "name": "Event Attendee",
@@ -194,7 +194,7 @@
   }
  ],
  "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
+ "sort_field": "creation",
+ "sort_order": "ASC",
  "states": []
 }
