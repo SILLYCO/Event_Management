@@ -202,18 +202,29 @@
         <aside class="space-y-8" id="register-section">
             <div class="sticky top-8 p-8 rounded-2xl bg-white border border-border-gray shadow-sm">
                 
+                {% if doc.show_capacity_on_website %}
                 <div class="mb-6">
                     <p class="text-gray-500 text-sm mb-1 font-medium">Availability</p>
                     <div class="flex items-end justify-between">
-                        <h3 class="text-3xl font-black text-charcoal">{{ confirmed_count }} <span class="text-lg font-normal text-gray-400">/ {{ doc.capacity }}</span></h3>
+                        
+                        {% if doc.capacity > 0 %}
+                            <h3 class="text-3xl font-black text-charcoal">{{ confirmed_count }} <span class="text-lg font-normal text-gray-400">/ {{ doc.capacity }}</span></h3>
+                        {% else %}
+                            <h3 class="text-3xl font-black text-charcoal">{{ confirmed_count }} <span class="text-lg font-normal text-gray-400">Registered</span></h3>
+                        {% endif %}
+                        
                         <span class="text-primary text-sm font-bold bg-soft-blue px-2 py-1 rounded">Taken</span>
                     </div>
+                    
+                    {% if doc.capacity > 0 %}
                     <div class="w-full bg-gray-100 h-2 rounded-full mt-4 overflow-hidden">
                         <div class="bg-primary h-full transition-all duration-500" style="width: {{ percent }}%"></div>
                     </div>
+                    {% endif %}
                 </div>
 
                 <hr class="my-6 border-border-gray"/>
+                {% endif %}
 
                 {% if frappe.session.user == 'Guest' %}
                     <div class="text-center">

@@ -41,6 +41,13 @@ class EventActivity(WebsiteGenerator):
             return
         
         now = now_datetime()
+        
+        # --- UPDATE REGISTERED COUNT ---
+        # We count this regardless of capacity limits so the admin always sees the live number.
+        self.registered_count = frappe.db.count("Event Attendee", {
+            "event_activity": self.name, 
+            "status": "Registered"
+        })
 
         # 1. Check if Event is Completed (Time-based - Highest Priority)
         if self.end_date and get_datetime(self.end_date) < now:
@@ -48,15 +55,10 @@ class EventActivity(WebsiteGenerator):
             return 
 
         # 2. Check Capacity (Sold Out - High Priority)
-        if self.capacity > 0:
-            confirmed_attendees = frappe.db.count("Event Attendee", {
-                "event_activity": self.name, 
-                "status": "Registered"
-            })
-
-            if confirmed_attendees >= self.capacity:
-                self.event_status = "Sold Out"
-                return # Stop here if full
+        # Only enforces "Sold Out" if capacity is greater than 0
+        if self.capacity > 0 and self.registered_count >= self.capacity:
+            self.event_status = "Sold Out"
+            return # Stop here if full
 
         # 3. Check Registration Start Date (Opening Soon vs Open)
         if self.registration_start_date:

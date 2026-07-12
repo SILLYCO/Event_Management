@@ -111,7 +111,8 @@ class EventAttendee(Document):
             "status": "Registered"
         })
 
-        if confirmed_count >= event_doc.capacity:
+        # FIX: Only block approval if capacity is strictly greater than 0
+        if event_doc.capacity > 0 and confirmed_count >= event_doc.capacity:
             frappe.throw(f"Cannot approve. The event is full ({confirmed_count}/{event_doc.capacity}).")
 
     def update_event_status(self):

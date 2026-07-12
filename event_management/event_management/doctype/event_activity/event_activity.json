@@ -18,8 +18,9 @@
   "end_date",
   "column_break_jiaw",
   "capacity",
+  "show_capacity_on_website",
+  "registered_count",
   "event_image",
-  "service",
   "section_break_njqc",
   "event_description",
   "route",
@@ -80,6 +81,7 @@
    "reqd": 1
   },
   {
+   "description": "Set to 0 for unlimited capacity",
    "fieldname": "capacity",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -138,12 +140,6 @@
    "options": "Event Custom Field"
   },
   {
-   "fieldname": "service",
-   "fieldtype": "Select",
-   "label": "Service",
-   "options": "\u0627\u0648\u0644\u0627\u062c \u0627\u0644\u0645\u0644\u0643\n\u0627\u0646\u0627 \u0627\u0645\u064a\u0631\u0629"
-  },
-  {
    "fieldname": "approval_instructions_section",
    "fieldtype": "Section Break",
    "label": "Approval Instructions"
@@ -190,6 +186,20 @@
    "fieldname": "payment_instructions",
    "fieldtype": "Text Editor",
    "label": "Payment Instructions"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_capacity_on_website",
+   "fieldtype": "Check",
+   "label": "Show Capacity on Website"
+  },
+  {
+   "default": "0",
+   "fieldname": "registered_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Registered Count",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
@@ -197,7 +207,7 @@
  "index_web_pages_for_search": 1,
  "is_published_field": "published",
  "links": [],
- "modified": "2026-03-12 16:23:27.926478",
+ "modified": "2026-07-12 03:52:54.601003",
  "modified_by": "Administrator",
  "module": "Event Management",
  "name": "Event Activity",
