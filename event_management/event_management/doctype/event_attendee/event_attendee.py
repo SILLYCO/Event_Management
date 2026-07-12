@@ -44,8 +44,15 @@ class EventAttendee(Document):
 
     def validate(self):
         """
-        Runs on every save. Checks permissions for Status Changes.
+        Runs on every save. Checks permissions and enforces strict queue fairness.
         """
+        # 1. Enforce Queue Fairness (Prevent reopening canceled registrations)
+        if not self.is_new():
+            old_status = self.db_get("status")
+            if old_status == "Canceled" and self.status != "Canceled":
+                frappe.throw("A canceled registration cannot be reopened. The user must submit a new application to ensure a fair queue order.")
+
+        # 2. Existing check for Registration Approval capacity and roles
         if self.status == "Registered" and self.db_get("status") != "Registered":
             if "System Manager" not in frappe.get_roles(frappe.session.user):
                 frappe.throw("Only Administrators can approve registrations.")
