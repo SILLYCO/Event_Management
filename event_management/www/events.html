@@ -173,20 +173,24 @@
 
                     <div class="mt-auto pt-5 border-t border-gray-100 flex items-center justify-between relative z-20">
                         
-                        {% if event.capacity > 0 %}
-                        <div class="w-full max-w-[120px]">
-                            <div class="flex justify-between items-center text-xs mb-1.5 font-bold">
-                                <span class="text-gray-400">Spots</span>
-                                <span class="{% if event.fill_percentage >= 90 %}text-red-500{% else %}text-charcoal{% endif %}">
-                                    {{ event.registered_count }}/{{ event.capacity }}
-                                </span>
+                        {% if event.show_capacity_on_website %}
+                            {% if event.capacity > 0 %}
+                            <div class="w-full max-w-[120px]">
+                                <div class="flex justify-between items-center text-xs mb-1.5 font-bold">
+                                    <span class="text-gray-400">Spots</span>
+                                    <span class="{% if event.fill_percentage >= 90 %}text-red-500{% else %}text-charcoal{% endif %}">
+                                        {{ event.registered_count }}/{{ event.capacity }}
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                    <div class="h-full rounded-full transition-all duration-1000 ease-out {% if event.fill_percentage >= 90 %}bg-red-500{% elif event.fill_percentage >= 75 %}bg-orange-500{% else %}bg-primary{% endif %}" style="width: {{ event.fill_percentage }}%"></div>
+                                </div>
                             </div>
-                            <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full transition-all duration-1000 ease-out {% if event.fill_percentage >= 90 %}bg-red-500{% elif event.fill_percentage >= 75 %}bg-orange-500{% else %}bg-primary{% endif %}" style="width: {{ event.fill_percentage }}%"></div>
-                            </div>
-                        </div>
+                            {% else %}
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Unlimited Spots</span>
+                            {% endif %}
                         {% else %}
-                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Unlimited Spots</span>
+                            <div></div> <!-- Prevents layout breaking when capacity is hidden -->
                         {% endif %}
 
                         <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-primary text-charcoal group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-primary/30 group-hover:rotate-[45deg]">

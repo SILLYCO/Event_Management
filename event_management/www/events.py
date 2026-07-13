@@ -11,12 +11,13 @@ def get_context(context):
         raise frappe.Redirect
     # -------------------------------------------
 
-    # 1. Fetch all events (Now including Capacity for the progress bar)
+    # 1. Fetch all events (Now using show_capacity_on_website)
     events = frappe.get_all(
         "Event Activity",
         fields=[
             "name", "event_title", "event_category", "event_status", 
-            "start_date", "event_image", "route", "event_description", "capacity"
+            "start_date", "event_image", "route", "event_description", 
+            "capacity", "show_capacity_on_website"
         ],
         order_by="start_date desc"
     )
