@@ -1,0 +1,45 @@
+[
+ {
+  "attach_files": "",
+  "attach_print": 0,
+  "channel": "Email",
+  "condition": null,
+  "date_changed": null,
+  "days_in_advance": 0,
+  "docstatus": 0,
+  "doctype": "Notification",
+  "document_type": "Event Attendee",
+  "enabled": 1,
+  "event": "Value Change",
+  "from_attach_field": null,
+  "is_standard": 0,
+  "message": "{% set event = frappe.get_doc(\"Event Activity\", doc.event_activity) %}\n\n<div style=\"font-family: Arial, sans-serif; color: #333; max-w-xl; line-height: 1.6;\">\n    <h2 style=\"color: #137fec;\">Registration Update</h2>\n    <p>Dear <strong>{{ doc.full_name }}</strong>,</p>\n    \n    <p>Your registration status for the event <strong>{{ doc.event_activity }}</strong> has been updated to: \n        <span style=\"padding: 4px 8px; border-radius: 4px; font-weight: bold; background-color: #f0f7ff; color: #137fec;\">\n            {{ doc.status }}\n        </span>\n    </p>\n\n    <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n\n    {% if doc.status == 'Registered' %}\n        <h3 style=\"color: #16a34a;\">🎉 You're in!</h3>\n        <p>Your seat is confirmed. We are excited to see you there.</p>\n        \n        <div style=\"background-color: #f9fafb; padding: 15px; border-radius: 8px; margin-top: 15px;\">\n            <p style=\"margin: 0 0 5px 0;\"><strong>Date:</strong> {{ frappe.utils.get_datetime(event.start_date).strftime('%A, %d-%m-%Y %I:%M %p') }}</p>\n            \n            {% if event.attendee_instructions %}\n                <p style=\"margin: 15px 0 5px 0;\"><strong>Important Instructions:</strong></p>\n                <p style=\"margin: 0; font-size: 14px; color: #555;\">{{ event.attendee_instructions }}</p>\n            {% endif %}\n        </div>\n\n    {% elif doc.status == 'Pending Transaction' %}\n        <h3 style=\"color: #ea580c;\">💳 Payment Required</h3>\n        <p>Your spot is temporarily reserved! To finalize your registration, please complete your payment of <strong>{{ doc.final_price }}</strong>.</p>\n        \n        {% if event.payment_instructions %}\n            <div style=\"background-color: #fff7ed; padding: 15px; border-radius: 8px; border: 1px solid #ffedd5;\">\n                <p style=\"margin: 0 0 5px 0; color: #9a3412;\"><strong>Payment Instructions:</strong></p>\n                <p style=\"margin: 0; font-size: 14px;\">{{ event.payment_instructions }}</p>\n            </div>\n        {% endif %}\n\n    {% elif doc.status == 'Rejected' %}\n        <h3 style=\"color: #dc2626;\">❌ Application Declined</h3>\n        <p>Unfortunately, we could not approve your application at this time.</p>\n        \n        {% if doc.rejection_reason %}\n            <p><strong>Reason:</strong> {{ doc.rejection_reason }}</p>\n        {% endif %}\n        <p>We hope to see you at future events!</p>\n\n    {% endif %}\n\n    <p style=\"margin-top: 30px; font-size: 12px; color: #888;\">\n        To view your full application details, please log in to your account on our website.\n    </p>\n</div>",
+  "message_type": "Markdown",
+  "method": null,
+  "modified": "2026-07-13 03:22:58.503811",
+  "module": null,
+  "name": "Event Attendee Status Update",
+  "print_format": null,
+  "property_value": null,
+  "recipients": [
+   {
+    "bcc": null,
+    "cc": null,
+    "condition": null,
+    "parent": "Event Attendee Status Update",
+    "parentfield": "recipients",
+    "parenttype": "Notification",
+    "receiver_by_document_field": "user",
+    "receiver_by_role": null
+   }
+  ],
+  "send_system_notification": 0,
+  "send_to_all_assignees": 0,
+  "sender": null,
+  "sender_email": null,
+  "set_property_after_alert": null,
+  "slack_webhook_url": null,
+  "subject": "Update on your registration for {{ doc.event_activity }}",
+  "value_changed": "status"
+ }
+]

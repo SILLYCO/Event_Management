@@ -12,13 +12,13 @@ app_license = "mit"
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
-# 	{
-# 		"name": "event_management",
-# 		"logo": "/assets/event_management/logo.png",
-# 		"title": "Event Management",
-# 		"route": "/event_management",
-# 		"has_permission": "event_management.api.permission.has_app_permission"
-# 	}
+#   {
+#       "name": "event_management",
+#       "logo": "/assets/event_management/logo.png",
+#       "title": "Event Management",
+#       "route": "/event_management",
+#       "has_permission": "event_management.api.permission.has_app_permission"
+#   }
 # ]
 
 # Includes in <head>
@@ -61,7 +61,7 @@ app_license = "mit"
 
 # website user home page (by Role)
 # role_home_page = {
-# 	"Role": "home_page"
+#   "Role": "home_page"
 # }
 
 # Generators
@@ -75,8 +75,8 @@ app_license = "mit"
 
 # add methods and filters to jinja environment
 # jinja = {
-# 	"methods": "event_management.utils.jinja_methods",
-# 	"filters": "event_management.utils.jinja_filters"
+#   "methods": "event_management.utils.jinja_methods",
+#   "filters": "event_management.utils.jinja_filters"
 # }
 
 # Installation
@@ -118,11 +118,11 @@ app_license = "mit"
 # Permissions evaluated in scripted ways
 
 # permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
+#   "Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
 # }
 #
 # has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
+#   "Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
 # DocType Class
@@ -130,7 +130,7 @@ app_license = "mit"
 # Override standard doctype classes
 
 # override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
+#   "ToDo": "custom_app.overrides.CustomToDo"
 # }
 
 # Document Events
@@ -138,32 +138,32 @@ app_license = "mit"
 # Hook on document methods and events
 
 # doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
+#   "*": {
+#       "on_update": "method",
+#       "on_cancel": "method",
+#       "on_trash": "method"
+#   }
 # }
 
 # Scheduled Tasks
 # ---------------
 
 scheduler_events = {
-# 	"all": [
-# 		"event_management.tasks.all"
-# 	],
-# 	"daily": [
-# 		"event_management.tasks.daily"
-# 	],
-	"hourly": [
-		"event_management.event_management.doctype.event_activity.event_activity.update_all_event_statuses"
-	],
-# 	"weekly": [
-# 		"event_management.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"event_management.tasks.monthly"
-# 	],
+#   "all": [
+#       "event_management.tasks.all"
+#   ],
+#   "daily": [
+#       "event_management.tasks.daily"
+#   ],
+    "hourly": [
+        "event_management.event_management.doctype.event_activity.event_activity.update_all_event_statuses"
+    ],
+#   "weekly": [
+#       "event_management.tasks.weekly"
+#   ],
+#   "monthly": [
+#       "event_management.tasks.monthly"
+#   ],
 }
 
 # Testing
@@ -175,14 +175,14 @@ scheduler_events = {
 # ------------------------------
 #
 # override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "event_management.event.get_events"
+#   "frappe.desk.doctype.event.event.get_events": "event_management.event.get_events"
 # }
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
 # override_doctype_dashboards = {
-# 	"Task": "event_management.task.get_dashboard_data"
+#   "Task": "event_management.task.get_dashboard_data"
 # }
 
 # exempt linked doctypes from being automatically cancelled
@@ -208,36 +208,54 @@ scheduler_events = {
 # --------------------
 
 # user_data_fields = [
-# 	{
-# 		"doctype": "{doctype_1}",
-# 		"filter_by": "{filter_by}",
-# 		"redact_fields": ["{field_1}", "{field_2}"],
-# 		"partial": 1,
-# 	},
-# 	{
-# 		"doctype": "{doctype_2}",
-# 		"filter_by": "{filter_by}",
-# 		"partial": 1,
-# 	},
-# 	{
-# 		"doctype": "{doctype_3}",
-# 		"strict": False,
-# 	},
-# 	{
-# 		"doctype": "{doctype_4}"
-# 	}
+#   {
+#       "doctype": "{doctype_1}",
+#       "filter_by": "{filter_by}",
+#       "redact_fields": ["{field_1}", "{field_2}"],
+#       "partial": 1,
+#   },
+#   {
+#       "doctype": "{doctype_2}",
+#       "filter_by": "{filter_by}",
+#       "partial": 1,
+#   },
+#   {
+#       "doctype": "{doctype_3}",
+#       "strict": False,
+#   },
+#   {
+#       "doctype": "{doctype_4}"
+#   }
 # ]
 
 # Authentication and authorization
 # --------------------------------
 
 # auth_hooks = [
-# 	"event_management.auth.validate"
+#   "event_management.auth.validate"
 # ]
 
 # Automatically update python controller files with type annotations for this app.
 # export_python_type_annotations = True
 
 # default_log_clearing_doctypes = {
-# 	"Logging DocType Name": 30  # days to retain logs
+#   "Logging DocType Name": 30  # days to retain logs
 # }
+
+# Fixtures for exporting UI customizations (like Notifications)
+# -----------------------------------------------------------
+
+fixtures = [
+    {
+        "dt": "Notification",
+        "filters": [
+            [
+                "name",
+                "in",
+                [
+                    "Event Attendee Status Update"
+                ]
+            ]
+        ]
+    }
+]
