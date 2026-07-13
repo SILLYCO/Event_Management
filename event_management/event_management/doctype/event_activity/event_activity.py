@@ -7,6 +7,19 @@ from frappe.utils import get_datetime, now_datetime
 
 class EventActivity(WebsiteGenerator):
     
+    def get_context(self, context):
+        """
+        Runs before the web page renders.
+        """
+        # --- NEW: Kick out guests with a notification ---
+        if frappe.session.user == "Guest":
+            frappe.msgprint("You have to log in first to view this event.", alert=True)
+            
+            # self.route ensures they are redirected back to the exact event they clicked
+            frappe.local.flags.redirect_location = f"/login?redirect-to=/{self.route}"
+            raise frappe.Redirect
+        # ------------------------------------------------
+
     def validate(self):
         """
         Run checks before saving the Event.

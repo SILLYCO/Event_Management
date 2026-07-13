@@ -2,6 +2,15 @@ import frappe
 from frappe.utils import get_datetime
 
 def get_context(context):
+    # --- NEW: Check if the user is logged in ---
+    if frappe.session.user == "Guest":
+        # Queue the toast notification
+        frappe.msgprint("You have to log in first to view the events.", alert=True)
+        # Set the redirect location and trigger the bounce
+        frappe.local.flags.redirect_location = "/login?redirect-to=/events"
+        raise frappe.Redirect
+    # -------------------------------------------
+
     # 1. Fetch all events (Now including Capacity for the progress bar)
     events = frappe.get_all(
         "Event Activity",
