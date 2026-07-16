@@ -2,18 +2,16 @@ import frappe
 from frappe.utils import get_datetime
 
 def get_context(context):
-    # --- NEW: Check if the user is logged in ---
+    # --- Check if the user is logged in ---
     if frappe.session.user == "Guest":
-        # Queue the toast notification
         frappe.msgprint("You have to log in first to view the events.", alert=True)
-        # Set the redirect location and trigger the bounce
         frappe.local.flags.redirect_location = "/login?redirect-to=/events"
         raise frappe.Redirect
-    # -------------------------------------------
 
-    # 1. Fetch all events (Now using show_capacity_on_website)
+    # 1. Fetch all PUBLISHED events (Added filter for published = 1)
     events = frappe.get_all(
         "Event Activity",
+        filters={"published": 1},
         fields=[
             "name", "event_title", "event_category", "event_status", 
             "start_date", "event_image", "route", "event_description", 
@@ -29,15 +27,14 @@ def get_context(context):
             categories.add(e.event_category)
     context.categories = sorted(list(categories))
 
-    # --- NEW: Extract unique statuses for the dropdown filter ---
+    # 3. Extract unique statuses for the dropdown filter
     statuses = set()
     for e in events:
         if e.event_status:
             statuses.add(e.event_status)
     context.statuses = sorted(list(statuses))
-    # ------------------------------------------------------------
 
-    # 3. Fetch user RSVPs and calculate Total Registered per event
+    # 4. Fetch user RSVPs and calculate Total Registered per event
     user_status_map = {}
     registered_counts = {}
     
@@ -58,7 +55,7 @@ def get_context(context):
             if att.event_activity not in user_status_map:
                 user_status_map[att.event_activity] = att.status
 
-    # 4. Format data and calculate scarcity
+    # 5. Format data and calculate scarcity
     for event in events:
         if event.start_date:
             event.formatted_date = get_datetime(event.start_date).strftime('%A, %d-%m-%Y %I:%M %p')
