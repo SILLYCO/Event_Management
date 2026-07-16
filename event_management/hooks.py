@@ -246,6 +246,7 @@ scheduler_events = {
 # -----------------------------------------------------------
 
 fixtures = [
+    "Workspace",
     {
         "dt": "Notification",
         "filters": [
