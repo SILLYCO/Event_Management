@@ -97,6 +97,7 @@
    "default": "Pending Approval",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
    "options": "Pending Approval\nPending Transaction\nRegistered\nRejected\nCanceled"
   },
