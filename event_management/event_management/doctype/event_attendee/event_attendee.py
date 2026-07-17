@@ -59,6 +59,48 @@ class EventAttendee(Document):
             
             self.check_capacity_and_reserve()
 
+        # 3. Prevent Overlapping Registrations
+        if self.status in ["Pending Approval", "Pending Transaction", "Registered"]:
+            self.check_date_overlap()
+
+    def check_date_overlap(self):
+        """
+        Ensures the user does not have any other active/pending registrations 
+        that overlap in date and time with the selected event.
+        """
+        event_dates = frappe.db.get_value("Event Activity", self.event_activity, ["event_title", "start_date", "end_date"], as_dict=True)
+        if not event_dates or not event_dates.start_date:
+            return
+
+        start_date = event_dates.start_date
+        end_date = event_dates.end_date or start_date
+
+        # Query overlapping active registrations for the same user
+        overlapping_events = frappe.db.sql("""
+            SELECT 
+                ea.event_title, ea.start_date, ea.end_date
+            FROM 
+                `tabEvent Attendee` attr
+            JOIN 
+                `tabEvent Activity` ea ON attr.event_activity = ea.name
+            WHERE 
+                attr.user = %s
+                AND attr.status IN ('Pending Approval', 'Pending Transaction', 'Registered')
+                AND attr.name != %s
+                AND (
+                    (ea.start_date < %s AND %s < COALESCE(ea.end_date, ea.start_date))
+                    OR (ea.start_date = %s)
+                )
+        """, (self.user, self.name or "NewDocument", end_date, start_date, start_date), as_dict=True)
+
+        if overlapping_events:
+            overlapping_titles = ", ".join([e.event_title for e in overlapping_events])
+            frappe.throw(
+                f"Cannot register. The dates for this event overlap with other event(s) "
+                f"you have registered for or applied to: {overlapping_titles}."
+            )
+
+
     def before_save(self):
         """
         Runs before saving. Calculates the final price and enforces race-condition locks.
