@@ -105,14 +105,30 @@ class EventAttendee(Document):
         """
         Runs before saving. Calculates the final price and enforces race-condition locks.
         """
+        # Fetch fields from event_activity if they are not set (fetch_from safety)
+        if self.event_activity and (not self.event_is_paid or not self.event_price):
+            is_paid, ticket_price = frappe.db.get_value("Event Activity", self.event_activity, ["is_paid", "ticket_price"])
+            self.event_is_paid = is_paid
+            self.event_price = ticket_price
+
+        if not self.is_new():
+            self._old_promo_code = self.db_get("promo_code")
+            self._old_status = self.db_get("status")
+
         if self.event_is_paid == "Paid":
             base_price = float(self.event_price or 0.0)
             
             if self.promo_code:
                 # --- RACE CONDITION PROTECTION ---
-                # If this is a brand new application, lock the promo code row in MySQL
-                # to prevent concurrent users from bypassing the usage limit.
+                # Lock row if new, promo changed, or status activated
+                promo_changed = False
                 if self.is_new():
+                    promo_changed = True
+                else:
+                    if (self.promo_code != self._old_promo_code) or (self.status in ["Pending Approval", "Pending Transaction", "Registered"] and self._old_status not in ["Pending Approval", "Pending Transaction", "Registered"]):
+                        promo_changed = True
+
+                if promo_changed:
                     frappe.db.sql("""
                         SELECT name FROM `tabEvent Promo Code` 
                         WHERE name = %s FOR UPDATE
@@ -133,24 +149,27 @@ class EventAttendee(Document):
                         self.final_price = base_price
             else:
                 self.final_price = base_price
-
-    def after_insert(self):
-        """
-        Increment the promo code usage counter securely.
-        """
-        if self.promo_code:
-            try:
-                promo = frappe.get_doc("Event Promo Code", self.promo_code)
-                promo.times_used = (promo.times_used or 0) + 1
-                promo.save(ignore_permissions=True)
-            except Exception as e:
-                frappe.log_error(f"Failed to increment promo code {self.promo_code}: {str(e)}")
+        else:
+            self.promo_code = None
+            self.final_price = 0.0
 
     def on_update(self):
         self.update_event_status()
+        
+        # Recalculate usage for current promo code
+        if self.promo_code:
+            update_promo_code_usage(self.promo_code)
+            
+        # Recalculate usage for old promo code if it changed
+        if hasattr(self, "_old_promo_code") and self._old_promo_code and self._old_promo_code != self.promo_code:
+            update_promo_code_usage(self._old_promo_code)
 
     def on_trash(self):
         self.update_event_status()
+
+    def after_delete(self):
+        if self.promo_code:
+            update_promo_code_usage(self.promo_code)
 
     def check_capacity_and_reserve(self):
         event_doc = frappe.get_doc("Event Activity", self.event_activity)
@@ -170,6 +189,19 @@ class EventAttendee(Document):
             event_doc.update_status()
             event_doc.flags.ignore_permissions = True
             event_doc.save()
+
+# --- PROMO CODE DYNAMIC USAGE RECALCULATION ---
+def update_promo_code_usage(promo_code):
+    """
+    Recalculates the usage count for a promo code based on active attendee records.
+    """
+    if not promo_code:
+        return
+    count = frappe.db.count("Event Attendee", {
+        "promo_code": promo_code,
+        "status": ["not in", ["Canceled", "Rejected"]]
+    })
+    frappe.db.set_value("Event Promo Code", promo_code, "times_used", count, update_modified=False)
 
 # --- NEW FUNCTION FOR CANCELLATION ---
 @frappe.whitelist()
@@ -226,7 +258,8 @@ def validate_promo_code(promo_code, event_name, attendee_name=None):
     if frappe.session.user != "Guest":
         filters = {
             "user": frappe.session.user,
-            "promo_code": promo_code
+            "promo_code": promo_code,
+            "status": ["not in", ["Canceled", "Rejected"]] # FIX: Exclude canceled/rejected records
         }
         # If updating an existing record, exclude itself from the "already used" check
         if attendee_name:
