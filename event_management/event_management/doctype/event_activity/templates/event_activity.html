@@ -1,702 +1,946 @@
 {% extends "templates/web.html" %}
 
+{% set no_header = 1 %}
+{% set no_footer = 1 %}
+
 {% block page_content %}
-<!DOCTYPE html>
-<html class="light" lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet"/>
+    <!-- Lucide Icons & Fonts -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
+        // Init theme immediately to prevent flashing
+        (function() {
+            const stored = localStorage.getItem("evently-theme");
+            const theme = stored === "light" ? "light" : "dark";
+            document.documentElement.classList.remove("light", "dark");
+            document.documentElement.classList.add(theme);
+        })();
+
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#137fec",
-                        "soft-blue": "#f0f7ff",
-                        "charcoal": "#1f2937",
-                        "light-gray": "#f9fafb",
-                        "border-gray": "#e5e7eb",
+                        background: 'var(--background)',
+                        foreground: 'var(--foreground)',
+                        card: {
+                            DEFAULT: 'var(--card)',
+                            foreground: 'var(--card-foreground)',
+                        },
+                        primary: {
+                            DEFAULT: 'var(--primary)',
+                            foreground: 'var(--primary-foreground)',
+                        },
+                        secondary: {
+                            DEFAULT: 'var(--secondary)',
+                            foreground: 'var(--secondary-foreground)',
+                        },
+                        muted: {
+                            DEFAULT: 'var(--muted)',
+                            foreground: 'var(--muted-foreground)',
+                        },
+                        border: 'var(--border)',
+                        input: 'var(--input)',
+                        ring: 'var(--ring)',
+                        deep: 'var(--deep)',
+                        electric: 'var(--electric)',
+                        midnight: 'var(--midnight)',
+                        surface: 'var(--surface)',
                     },
                     fontFamily: {
-                        "display": ["Inter", "sans-serif"]
-                    },
-                },
-            },
+                        display: ["Manrope", "sans-serif"],
+                        sora: ["Sora", "sans-serif"],
+                        manrope: ["Manrope", "sans-serif"],
+                    }
+                }
+            }
         }
     </script>
-</head>
-<body class="min-h-screen bg-white text-charcoal font-display antialiased">
-
-{% set confirmed_count = frappe.db.count("Event Attendee", {"event_activity": doc.name, "status": "Registered"}) %}
-{% set percent = 0 %}
-{% if doc.capacity > 0 %}
-    {% set percent = (confirmed_count / doc.capacity * 100) | round %}
-{% endif %}
-
-{% set my_rsvp = "None" %}
-{% set attendee_name = "" %}
-{% set rejection_reason = "" %}
-{% set my_final_price = doc.ticket_price %}
-
-{% if frappe.session.user != 'Guest' %}
-    {% set attendee = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, ["name", "status", "rejection_reason", "final_price"], as_dict=True) %}
     
-    {% if attendee %}
-        {% set my_rsvp = attendee.status %}
-        {% set attendee_name = attendee.name %}
-        {% set rejection_reason = attendee.rejection_reason %}
-        {% if attendee.final_price is not none %}
-            {% set my_final_price = attendee.final_price %}
+    <!-- Lovable Color Variables -->
+    <style>
+        :root {
+            --radius: 0.875rem;
+            --midnight: #0a0a1a;
+            --surface: #141432;
+            --deep: #1e1e5a;
+            --electric: #4f46e5;
+
+            --background: var(--midnight);
+            --foreground: #f8fafc;
+            --card: var(--surface);
+            --card-foreground: #f8fafc;
+            --popover: var(--surface);
+            --popover-foreground: #f8fafc;
+            --primary: var(--electric);
+            --primary-foreground: #ffffff;
+            --secondary: var(--deep);
+            --secondary-foreground: #f8fafc;
+            --muted: var(--surface);
+            --muted-foreground: #94a3b8;
+            --accent: var(--deep);
+            --accent-foreground: #f8fafc;
+            --destructive: #ef4444;
+            --destructive-foreground: #ffffff;
+            --border: rgba(255, 255, 255, 0.08);
+            --input: rgba(255, 255, 255, 0.1);
+            --ring: var(--electric);
+        }
+
+        html.light, :root.light {
+            --midnight: #f7f6f2;
+            --surface: #ffffff;
+            --deep: #ebe9f8;
+            --electric: #4f46e5;
+
+            --background: var(--midnight);
+            --foreground: #1e293b;
+            --card: var(--surface);
+            --card-foreground: #1e293b;
+            --popover: var(--surface);
+            --popover-foreground: #1e293b;
+            --primary: var(--electric);
+            --primary-foreground: #ffffff;
+            --secondary: var(--deep);
+            --secondary-foreground: #1e293b;
+            --muted: var(--deep);
+            --muted-foreground: #64748b;
+            --accent: var(--deep);
+            --accent-foreground: #1e293b;
+            --destructive: #dc2626;
+            --destructive-foreground: #ffffff;
+            --border: rgba(0, 0, 0, 0.08);
+            --input: rgba(0, 0, 0, 0.1);
+            --ring: var(--electric);
+        }
+
+        body {
+            background-color: var(--background) !important;
+            color: var(--foreground) !important;
+            font-family: 'Manrope', sans-serif !important;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Sora', sans-serif;
+            letter-spacing: -0.01em;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        * {
+            border-color: var(--border);
+        }
+    </style>
+
+<div class="min-h-screen bg-background text-foreground overflow-x-hidden pb-10">
+
+    {%- macro get_status_dot(status) -%}
+      {%- if status == 'Open for Registration' -%}
+        bg-emerald-400
+      {%- elif status == 'Opening Soon' -%}
+        bg-amber-400
+      {%- elif status == 'Sold Out' or status == 'Cancelled' -%}
+        bg-rose-400
+      {%- else -%}
+        bg-gray-400
+      {%- endif -%}
+    {%- endmacro -%}
+
+    {%- macro get_status_label(status) -%}
+      {%- if status == 'Open for Registration' -%}
+        Open Now
+      {%- elif status == 'Opening Soon' -%}
+        Opening Soon
+      {%- elif status == 'Sold Out' -%}
+        Sold Out
+      {%- elif status == 'Cancelled' -%}
+        Cancelled
+      {%- else -%}
+        {{ status }}
+      {%- endif -%}
+    {%- endmacro -%}
+
+    {% set confirmed_count = frappe.db.count("Event Attendee", {"event_activity": doc.name, "status": "Registered"}) %}
+    {% set percent = 0 %}
+    {% if doc.capacity > 0 %}
+        {% set percent = (confirmed_count / doc.capacity * 100) | round %}
+    {% endif %}
+
+    {% set my_rsvp = "None" %}
+    {% set attendee_name = "" %}
+    {% set rejection_reason = "" %}
+    {% set my_final_price = doc.ticket_price %}
+
+    {% if frappe.session.user != 'Guest' %}
+        {% set attendee = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, ["name", "status", "rejection_reason", "final_price"], as_dict=True) %}
+        
+        {% if attendee %}
+            {% set my_rsvp = attendee.status %}
+            {% set attendee_name = attendee.name %}
+            {% set rejection_reason = attendee.rejection_reason %}
+            {% if attendee.final_price is not none %}
+                {% set my_final_price = attendee.final_price %}
+            {% endif %}
         {% endif %}
     {% endif %}
-{% endif %}
 
-<header class="bg-white border-b border-border-gray">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div class="grid lg:grid-cols-2 gap-12 items-center">
-            
-            <div class="order-2 lg:order-1">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-6">
-                    <span class="material-symbols-outlined text-primary text-sm font-semibold">category</span>
-                    <span class="text-primary text-xs font-bold uppercase tracking-wider">{{ doc.event_category }}</span>
+    <!-- Ambient background -->
+    <div class="pointer-events-none fixed inset-0 -z-10">
+        <div class="absolute -top-40 left-1/4 size-[500px] rounded-full bg-primary/15 blur-[140px]"></div>
+        <div class="absolute bottom-0 -right-40 size-[500px] rounded-full bg-deep/40 blur-[140px]"></div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="max-w-[1400px] mx-auto px-6 lg:px-10 py-6 flex items-center justify-between">
+        <a href="/events" class="flex items-center gap-2.5">
+            <div class="size-8 rounded-lg bg-primary grid place-items-center shadow-lg shadow-primary/40">
+                <i data-lucide="sparkles" class="size-4 text-primary-foreground"></i>
+            </div>
+            <span class="font-semibold text-lg tracking-tight">Evently</span>
+        </a>
+        <div class="flex items-center gap-2">
+            <!-- Theme Toggle -->
+            <button id="theme-toggle" aria-label="Toggle theme" class="size-10 grid place-items-center rounded-full bg-card ring-1 ring-border hover:bg-card/70 transition-colors">
+                <i data-lucide="sun" class="size-4 hidden dark:block"></i>
+                <i data-lucide="moon" class="size-4 block dark:hidden"></i>
+            </button>
+            <a href="/events" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card ring-1 ring-border text-sm font-medium hover:bg-card/70">
+                <i data-lucide="arrow-left" class="size-4"></i>
+                All events
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="max-w-[1400px] mx-auto px-6 lg:px-10 pt-4 pb-16">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+            <!-- Left: title / metadata -->
+            <div class="lg:col-span-7 text-left">
+                <div class="flex flex-wrap items-center gap-2 mb-6">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card ring-1 ring-border text-xs font-medium text-foreground">
+                        <span class="size-1.5 rounded-full bg-primary"></span>
+                        {{ doc.event_category }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card ring-1 ring-border text-xs font-medium text-foreground">
+                        <span class="size-1.5 rounded-full {{ get_status_dot(doc.event_status) }}"></span>
+                        {{ get_status_label(doc.event_status) }}
+                    </span>
                 </div>
-                
-                {% if doc.event_status == 'Open for Registration' %}
-                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-200 mb-6 text-xs font-bold uppercase">Open</span>
-                {% elif doc.event_status == 'Sold Out' %}
-                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-200 mb-6 text-xs font-bold uppercase">Sold Out</span>
-                {% else %}
-                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200 mb-6 text-xs font-bold uppercase">{{ doc.event_status }}</span>
-                {% endif %}
 
-                <h1 class="text-charcoal text-4xl lg:text-5xl font-black leading-tight tracking-tight mb-6">
+                <h1 class="text-[clamp(2.5rem,6vw,5.5rem)] font-semibold leading-[0.95] tracking-tight text-balance text-foreground">
                     {{ doc.event_title }}
                 </h1>
-                
-                <div class="text-gray-600 text-lg leading-relaxed mb-8 max-w-xl">
-                    {{ doc.event_description | striptags | truncate(150) }}
-                </div>
+                <p class="mt-6 text-lg text-muted-foreground text-pretty max-w-xl">
+                    {{ doc.event_description | striptags | truncate(180) }}
+                </p>
 
-                <div class="flex flex-wrap gap-4">
-                     <a href="#register-section" class="px-8 py-3.5 rounded-lg bg-primary hover:bg-blue-600 text-white font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                        <span>Go to Registration</span>
-                        <span class="material-symbols-outlined text-lg">arrow_downward</span>
-                    </a>
+                <!-- Meta Row -->
+                <div class="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <!-- Date -->
+                    <div class="p-4 rounded-2xl bg-card ring-1 ring-border text-left">
+                        <div class="flex items-center gap-2 text-muted-foreground mb-2">
+                            <i data-lucide="calendar" class="size-4"></i>
+                            <span class="text-[11px] uppercase tracking-widest">Date</span>
+                        </div>
+                        <div class="text-lg font-semibold text-card-foreground">
+                            {{ frappe.utils.get_datetime(doc.start_date).strftime('%b %d') if doc.start_date else 'TBA' }}
+                        </div>
+                    </div>
+                    <!-- Starts -->
+                    <div class="p-4 rounded-2xl bg-card ring-1 ring-border text-left">
+                        <div class="flex items-center gap-2 text-muted-foreground mb-2">
+                            <i data-lucide="clock" class="size-4"></i>
+                            <span class="text-[11px] uppercase tracking-widest">Starts</span>
+                        </div>
+                        <div class="text-lg font-semibold text-card-foreground">
+                            {{ frappe.utils.get_datetime(doc.start_date).strftime('%I:%M %p') if doc.start_date else 'TBA' }}
+                        </div>
+                    </div>
+                    <!-- Spots -->
+                    <div class="p-4 rounded-2xl bg-card ring-1 ring-border text-left">
+                        <div class="flex items-center gap-2 text-muted-foreground mb-2">
+                            <i data-lucide="users" class="size-4"></i>
+                            <span class="text-[11px] uppercase tracking-widest">Spots</span>
+                        </div>
+                        <div class="text-lg font-semibold text-card-foreground">
+                            {{ confirmed_count }} / {{ doc.capacity if doc.capacity > 0 else '∞' }}
+                        </div>
+                    </div>
+                    <!-- Ticket -->
+                    <div class="p-4 rounded-2xl bg-card ring-1 ring-border text-left">
+                        <div class="flex items-center gap-2 text-muted-foreground mb-2">
+                            <i data-lucide="ticket" class="size-4"></i>
+                            <span class="text-[11px] uppercase tracking-widest">Ticket</span>
+                        </div>
+                        <div class="text-lg font-semibold text-card-foreground">
+                            {% if doc.is_paid == 'Paid' and doc.ticket_price %}
+                                {{ doc.ticket_price }}
+                            {% else %}
+                                Free
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="order-1 lg:order-2">
-                <div class="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white aspect-video lg:aspect-square">
+            <!-- Right: Cover Image card -->
+            <div class="lg:col-span-5">
+                <div class="relative aspect-[4/5] max-h-[520px] rounded-3xl overflow-hidden ring-1 ring-border bg-gray-900 shadow-2xl">
                     {% if doc.event_image %}
-                        <div class="absolute inset-0 bg-cover bg-center" style='background-image: url("{{ doc.event_image }}");'></div>
+                    <img src="{{ doc.event_image }}" alt="{{ doc.event_title }}" class="absolute inset-0 h-full w-full object-cover"/>
                     {% else %}
-                        <div class="absolute inset-0 bg-gray-100 flex items-center justify-center text-gray-400">
-                            <span class="material-symbols-outlined text-6xl">image_not_supported</span>
-                        </div>
+                    <div class="absolute inset-0 flex items-center justify-center text-gray-700 bg-gray-950">
+                        <i data-lucide="image-off" class="size-20"></i>
+                    </div>
                     {% endif %}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30"></div>
+
+                    <div class="absolute inset-0 p-8 lg:p-10 flex flex-col justify-between text-white text-left">
+                        <div class="flex items-center justify-between">
+                            <div class="text-[11px] uppercase tracking-[0.3em] text-white/80">Save the date</div>
+                            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur ring-1 ring-white/20 text-xs">
+                                <span class="size-1.5 rounded-full {{ get_status_dot(doc.event_status) }}"></span>
+                                {{ get_status_label(doc.event_status) }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/90">
+                                {{ frappe.utils.get_datetime(doc.start_date).strftime('%b') if doc.start_date else 'TBA' }}
+                            </div>
+                            <div class="text-[8rem] lg:text-[10rem] leading-[0.85] font-semibold tracking-tight -ml-1 drop-shadow-lg">
+                                {{ frappe.utils.get_datetime(doc.start_date).strftime('%d') if doc.start_date else '-' }}
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-sm text-white/85">
+                                <i data-lucide="map-pin" class="size-4"></i>
+                                <span>Location revealed on registration</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</header>
+    </section>
 
-<main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="grid lg:grid-cols-3 gap-12">
-        
-        <div class="lg:col-span-2 space-y-12">
-            
-            <div class="grid sm:grid-cols-1 gap-6">
-                <div class="p-6 rounded-xl bg-light-gray border border-border-gray flex items-start gap-4">
-                    <div class="p-3 rounded-lg bg-white shadow-sm text-primary border border-border-gray">
-                        <span class="material-symbols-outlined">calendar_month</span>
+    <!-- Content + Sidebar booking section -->
+    <section class="max-w-[1400px] mx-auto px-6 lg:px-10 pb-20">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+            <!-- Left content column -->
+            <div class="lg:col-span-7 space-y-10 text-left">
+                <!-- Date & Time Full Card -->
+                <div class="p-6 lg:p-8 rounded-3xl bg-card ring-1 ring-border">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="p-2.5 rounded-xl bg-background text-primary ring-1 ring-border">
+                            <i data-lucide="calendar" class="size-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-[11px] uppercase tracking-widest text-muted-foreground">Date & Time</div>
+                            <div class="font-semibold text-lg text-card-foreground">
+                                {{ frappe.utils.get_datetime(doc.start_date).strftime('%A, %d-%m-%Y %I:%M %p') if doc.start_date else 'TBA' }}
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Date & Time</p>
-                        <p class="text-charcoal font-bold text-lg leading-tight">
-                            {{ frappe.utils.get_datetime(doc.start_date).strftime('%A, %d-%m-%Y %I:%M %p') }}
-                        </p>
-                        {% if doc.end_date %}
-                            <p class="text-gray-600 text-sm">Until: 
-                                {{ frappe.utils.get_datetime(doc.end_date).strftime('%A, %d-%m-%Y %I:%M %p') }}
-                            </p>
-                        {% endif %}
+                    {% if doc.end_date %}
+                    <div class="pl-14 text-sm text-muted-foreground">
+                        Until {{ frappe.utils.get_datetime(doc.end_date).strftime('%A, %d-%m-%Y %I:%M %p') }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <h2 class="flex items-center gap-3 text-2xl font-semibold mb-5 text-foreground">
+                        <span class="h-px w-6 bg-primary"></span>
+                        About the event
+                    </h2>
+                    <div class="text-muted-foreground leading-relaxed text-lg max-w-2xl prose prose-invert">
+                        {{ doc.event_description }}
+                    </div>
+
+                    <!-- Layout Claims Grid -->
+                    <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% for line in [
+                          "Approval required for all applications",
+                          "Refundable up to 7 days before start",
+                          "Includes gear, meals, and access",
+                          "Community-hosted, small groups"
+                        ] %}
+                        <div class="flex items-start gap-3 p-4 rounded-2xl bg-card/60 ring-1 ring-border">
+                            <div class="mt-0.5 size-5 rounded-full bg-primary/15 grid place-items-center shrink-0">
+                                <i data-lucide="check" class="size-3 text-primary"></i>
+                            </div>
+                            <span class="text-sm text-foreground/90">{{ line }}</span>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
 
-                {% if doc.is_paid == 'Paid' and doc.ticket_price %}
-                <div class="p-6 rounded-xl bg-light-gray border border-border-gray flex items-start gap-4">
-                    <div class="p-3 rounded-lg bg-white shadow-sm text-green-600 border border-border-gray">
-                        <span class="material-symbols-outlined">local_activity</span>
+                <!-- Dynamic exclusive instructions and attachments -->
+                {% if my_rsvp == 'Registered' and (doc.attendee_instructions or doc.attendee_attachment) %}
+                <div class="p-8 rounded-3xl bg-primary/10 ring-1 ring-primary/20 relative overflow-hidden shadow-inner text-left">
+                    <div class="absolute -top-6 -right-6 p-4 opacity-5 pointer-events-none text-primary">
+                        <i data-lucide="lock" class="w-[150px] h-[150px]"></i>
                     </div>
-                    <div>
-                        <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Ticket Cost</p>
-                        <p class="text-charcoal font-black text-2xl leading-tight">
-                            {{ doc.ticket_price }}
-                        </p>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
 
-            <section>
-                <h2 class="text-2xl font-black text-charcoal mb-6 flex items-center gap-2">
-                    <span class="w-8 h-1 bg-primary rounded-full"></span>
-                    About the Event
-                </h2>
-                <div class="prose prose-slate max-w-none text-gray-600 leading-relaxed space-y-4">
-                    {{ doc.event_description }}
-                </div>
-            </section>
-
-            {% if my_rsvp == 'Registered' and (doc.attendee_instructions or doc.attendee_attachment) %}
-            <section class="mt-12 bg-soft-blue border border-blue-100 rounded-2xl p-8 relative overflow-hidden shadow-inner">
-                
-                <div class="absolute -top-6 -right-6 p-4 opacity-5 pointer-events-none">
-                    <span class="material-symbols-outlined text-[150px] text-primary">lock_open</span>
-                </div>
-                
-                <div class="relative z-10">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary text-white mb-6 text-xs font-bold uppercase tracking-widest shadow-sm">
-                        <span class="material-symbols-outlined text-[14px]">verified_user</span>
-                        Attendee Exclusive Info
-                    </div>
-                    
-                    <h2 class="text-2xl font-black text-charcoal mb-6">Important Instructions</h2>
-                    
-                    <div class="space-y-6">
+                    <div class="relative z-10 space-y-6">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold uppercase tracking-widest shadow-sm">
+                            <i data-lucide="shield-check" class="size-3.5"></i>
+                            Attendee Exclusive Info
+                        </div>
+                        <h2 class="text-2xl font-black text-foreground">Important Instructions</h2>
                         
                         {% if doc.attendee_instructions %}
-                        <div class="bg-white p-6 rounded-xl border border-blue-50 shadow-sm transition-all hover:shadow-md">
-                            <div class="prose prose-sm max-w-none text-gray-600">
+                        <div class="bg-card p-6 rounded-xl border border-primary/10 shadow-sm">
+                            <div class="prose prose-sm max-w-none text-muted-foreground">
                                 {{ doc.attendee_instructions }}
                             </div>
                         </div>
                         {% endif %}
-                        
+
                         {% if doc.attendee_attachment %}
                         <div>
-                            <a href="{{ doc.attendee_attachment }}" target="_blank" download class="group inline-flex items-center gap-4 bg-white p-4 rounded-xl border border-blue-50 shadow-sm transition-all hover:shadow-md hover:border-primary w-full sm:w-auto">
-                                <div class="p-3 bg-blue-50 group-hover:bg-primary group-hover:text-white text-primary rounded-lg shrink-0 transition-colors">
-                                    <span class="material-symbols-outlined">download</span>
+                            <a href="{{ doc.attendee_attachment }}" target="_blank" download class="group inline-flex items-center gap-4 bg-card p-4 rounded-xl border border-border hover:border-primary w-full sm:w-auto shadow-sm transition-all">
+                                <div class="p-3 bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground rounded-lg transition-colors">
+                                    <i data-lucide="download" class="size-5"></i>
                                 </div>
-                                <div class="pr-4">
-                                    <h4 class="font-bold text-charcoal text-base mb-0.5 group-hover:text-primary transition-colors">Download Event Materials</h4>
-                                    <p class="text-gray-500 text-xs">Click to view or save attached file</p>
+                                <div class="pr-4 text-left">
+                                    <h4 class="font-bold text-foreground text-base mb-0.5 group-hover:text-primary transition-colors">Download Event Materials</h4>
+                                    <p class="text-muted-foreground text-xs">Click to view or save attached file</p>
                                 </div>
                             </a>
                         </div>
                         {% endif %}
-
                     </div>
                 </div>
-            </section>
-            {% endif %}
-            </div>
-
-        <aside class="space-y-8" id="register-section">
-            <div class="sticky top-8 p-8 rounded-2xl bg-white border border-border-gray shadow-sm">
-                
-                {% if doc.show_capacity_on_website %}
-                <div class="mb-6">
-                    <p class="text-gray-500 text-sm mb-1 font-medium">Availability</p>
-                    <div class="flex items-end justify-between">
-                        
-                        {% if doc.capacity > 0 %}
-                            <h3 class="text-3xl font-black text-charcoal">{{ confirmed_count }} <span class="text-lg font-normal text-gray-400">/ {{ doc.capacity }}</span></h3>
-                        {% else %}
-                            <h3 class="text-3xl font-black text-charcoal">{{ confirmed_count }} <span class="text-lg font-normal text-gray-400">Registered</span></h3>
-                        {% endif %}
-                        
-                        <span class="text-primary text-sm font-bold bg-soft-blue px-2 py-1 rounded">Taken</span>
-                    </div>
-                    
-                    {% if doc.capacity > 0 %}
-                    <div class="w-full bg-gray-100 h-2 rounded-full mt-4 overflow-hidden">
-                        <div class="bg-primary h-full transition-all duration-500" style="width: {{ percent }}%"></div>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <hr class="my-6 border-border-gray"/>
                 {% endif %}
 
-                {% if frappe.session.user == 'Guest' %}
-                    <div class="text-center">
-                        <p class="text-gray-600 mb-4 text-sm">You must account to register.</p>
-                        <a href="/login?redirect-to={{ request.path }}" class="w-full block py-4 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold shadow-lg shadow-primary/20 transition-all text-center">
-                            Login to Register
-                        </a>
+                <!-- Dynamic Related Events -->
+                {% set related_events = frappe.get_all("Event Activity", filters={"published": 1, "event_category": doc.event_category, "name": ["!=", doc.name]}, fields=["name", "event_title", "event_category", "event_status", "start_date", "event_image", "route"], limit=3) %}
+                {% if related_events %}
+                <div>
+                  <h2 class="flex items-center gap-3 text-2xl font-semibold mb-5 text-foreground">
+                    <span class="h-px w-6 bg-primary"></span>
+                    More like this
+                  </h2>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {% for r in related_events %}
+                    <a href="/{{ r.route }}" class="group rounded-2xl bg-card ring-1 ring-border hover:ring-primary/40 transition-all overflow-hidden flex flex-col">
+                      <div class="relative aspect-[16/10] overflow-hidden bg-gray-900">
+                        {% if r.event_image %}
+                        <img src="{{ r.event_image }}" alt="{{ r.event_title }}" class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                        {% else %}
+                        <div class="absolute inset-0 flex items-center justify-center text-gray-500">
+                            <i data-lucide="image" class="size-6"></i>
+                        </div>
+                        {% endif %}
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div class="absolute top-2 left-2 flex flex-col items-center w-10 h-10 rounded-md bg-black/50 backdrop-blur ring-1 ring-white/20 justify-center text-white">
+                          <div class="text-[8px] uppercase tracking-widest font-semibold">
+                            {{ frappe.utils.get_datetime(r.start_date).strftime('%b') if r.start_date else "TBA" }}
+                          </div>
+                          <div class="text-sm font-semibold leading-none mt-0.5">
+                            {{ frappe.utils.get_datetime(r.start_date).strftime('%d') if r.start_date else "-" }}
+                          </div>
+                        </div>
+                        <i data-lucide="arrow-up-right" class="absolute top-2 right-2 size-4 text-white/90"></i>
+                      </div>
+                      <div class="p-4 text-left flex-1">
+                        <div class="text-xs text-muted-foreground">{{ r.event_category }}</div>
+                        <div class="font-semibold mt-0.5 truncate text-card-foreground group-hover:text-primary transition-colors">{{ r.event_title }}</div>
+                      </div>
+                    </a>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right sidebar booking column -->
+            <div class="lg:col-span-5 text-left">
+                <div class="sticky top-6 rounded-3xl bg-card ring-1 ring-border overflow-hidden shadow-2xl shadow-primary/5">
+                    
+                    <!-- Ticket Info / Spots Header -->
+                    <div class="p-6 lg:p-8 border-b border-border">
+                        <div class="flex items-baseline justify-between mb-1">
+                            <span class="text-[11px] uppercase tracking-widest text-muted-foreground">Ticket cost</span>
+                            <span class="text-xs font-semibold {{ get_status_dot(doc.event_status) }} bg-opacity-10 px-2 py-0.5 rounded text-white">{{ get_status_label(doc.event_status) }}</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-5xl font-semibold tracking-tight text-card-foreground">
+                                {% if doc.is_paid == 'Paid' and doc.ticket_price %}
+                                    {{ doc.ticket_price }}
+                                {% else %}
+                                    Free
+                                {% endif %}
+                            </span>
+                            <span class="text-muted-foreground">per person</span>
+                        </div>
+
+                        {% if doc.show_capacity_on_website %}
+                        <div class="mt-6 space-y-2">
+                            <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>Availability</span>
+                                <span class="font-medium text-card-foreground">
+                                    {{ confirmed_count }} / {{ doc.capacity if doc.capacity > 0 else 'Unlimited' }} spots
+                                </span>
+                            </div>
+                            {% if doc.capacity > 0 %}
+                            <div class="h-1.5 bg-background rounded-full overflow-hidden">
+                                <div class="h-full bg-primary" style="width: {{ percent }}%"></div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
                     </div>
 
-                {% else %}
-                    
-                    {% if my_rsvp == 'Registered' %}
-                        <div class="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 mb-4">
-                            <div class="flex items-center gap-3 mb-2">
-                                <span class="material-symbols-outlined">check_circle</span>
-                                <div>
-                                    <p class="font-bold">You are Registered!</p>
-                                    <p class="text-xs">Your seat is confirmed.</p>
+                    <!-- Main Booking / RSVP State Actions Body -->
+                    <div class="p-6 lg:p-8 space-y-5">
+                        {% if frappe.session.user == 'Guest' %}
+                            <div class="text-center py-4">
+                                <i data-lucide="user-x" class="size-12 mx-auto text-muted-foreground mb-3"></i>
+                                <p class="text-muted-foreground mb-5 text-sm">You must log in to register for this event.</p>
+                                <a href="/login?redirect-to={{ request.path }}" class="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-medium flex items-center justify-center gap-2 hover:bg-primary/90 transition-all hover:-translate-y-0.5 shadow-lg shadow-primary/30">
+                                    Login to Register
+                                    <i data-lucide="log-in" class="size-4"></i>
+                                </a>
+                            </div>
+
+                        {% else %}
+
+                            {% if my_rsvp == 'Registered' %}
+                                <div class="p-5 rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/20 text-emerald-400 space-y-4">
+                                    <div class="flex items-start gap-3">
+                                        <i data-lucide="check-circle-2" class="size-6 text-emerald-400 shrink-0 mt-0.5"></i>
+                                        <div>
+                                            <p class="font-bold text-foreground">You are Registered!</p>
+                                            <p class="text-xs text-muted-foreground">Your seat is fully confirmed.</p>
+                                        </div>
+                                    </div>
+
+                                    <button onclick="addToGoogleCalendar()" class="w-full py-3 bg-card ring-1 ring-border text-foreground hover:bg-foreground hover:text-background rounded-xl font-semibold flex items-center justify-center gap-2 transition-all text-sm">
+                                        <i data-lucide="calendar-plus" class="size-4"></i>
+                                        Add to Google Calendar
+                                    </button>
+
+                                    {% if doc.event_status != 'Completed' %}
+                                    <button onclick="cancelRegistration('{{ attendee_name }}')" class="w-full text-center text-xs text-rose-400 hover:text-rose-300 font-semibold underline py-1 block">
+                                        Cancel my registration
+                                    </button>
+                                    {% endif %}
                                 </div>
-                            </div>
-                            
-                            {% if doc.event_status != 'Completed' %}
-                            <button onclick="cancelRegistration('{{ attendee_name }}')" class="text-xs text-red-600 hover:text-red-800 font-semibold underline ml-9 mb-4 block">
-                                Cancel my registration
-                            </button>
-                            {% endif %}
-                            
-                            <button onclick="addToGoogleCalendar()" class="mt-2 flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white hover:bg-charcoal text-gray-700 hover:text-white rounded-lg font-bold transition-all duration-300 shadow-sm border border-gray-200 hover:border-transparent text-sm">
-                                <span class="material-symbols-outlined text-[18px]">calendar_add_on</span>
-                                Add to Google Calendar
-                            </button>
-                        </div>
 
-                    {% elif my_rsvp == 'Pending Approval' %}
-                        <div class="p-4 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800 mb-4">
-                            <div class="flex items-center gap-3 mb-2">
-                                <span class="material-symbols-outlined">hourglass_top</span>
-                                <div>
-                                    <p class="font-bold">Application Pending</p>
-                                    <p class="text-xs">Waiting for admin approval.</p>
+                            {% elif my_rsvp == 'Pending Approval' %}
+                                <div class="p-5 rounded-2xl bg-amber-500/10 ring-1 ring-amber-500/20 text-amber-400 space-y-4">
+                                    <div class="flex items-start gap-3">
+                                        <i data-lucide="hourglass" class="size-6 text-amber-400 shrink-0 mt-0.5"></i>
+                                        <div>
+                                            <p class="font-bold text-foreground">Application Pending</p>
+                                            <p class="text-xs text-muted-foreground">Waiting for administrator approval.</p>
+                                        </div>
+                                    </div>
+
+                                    {% if doc.event_status != 'Completed' %}
+                                    <button onclick="cancelRegistration('{{ attendee_name }}')" class="w-full py-3 bg-rose-500/10 hover:bg-rose-500/20 ring-1 ring-rose-500/20 text-rose-400 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all text-sm">
+                                        Cancel request
+                                    </button>
+                                    {% endif %}
                                 </div>
-                            </div>
-                            
-                            {% if doc.event_status != 'Completed' %}
-                            <button onclick="cancelRegistration('{{ attendee_name }}')" class="text-xs text-red-600 hover:text-red-800 font-semibold underline ml-9">
-                                Cancel request
-                            </button>
-                            {% endif %}
-                        </div>
-                    
-                    {% elif my_rsvp == 'Pending Transaction' %}
-                        <div class="p-5 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 mb-4 shadow-sm">
-                            <div class="flex items-center gap-3 mb-4">
-                                <span class="material-symbols-outlined text-orange-500 text-3xl">payments</span>
-                                <div>
-                                    <p class="font-black text-lg leading-tight">Awaiting Payment</p>
-                                    <p class="text-xs font-medium opacity-80">Your spot is reserved, pending payment.</p>
+
+                            {% elif my_rsvp == 'Pending Transaction' %}
+                                <div class="p-5 rounded-2xl bg-orange-500/10 ring-1 ring-orange-500/20 text-orange-400 space-y-4">
+                                    <div class="flex items-start gap-3">
+                                        <i data-lucide="wallet" class="size-6 text-orange-400 shrink-0 mt-0.5"></i>
+                                        <div>
+                                            <p class="font-bold text-foreground">Awaiting Payment</p>
+                                            <p class="text-xs text-muted-foreground">Your spot is reserved, pending transaction clearance.</p>
+                                        </div>
+                                    </div>
+
+                                    {% if doc.is_paid == 'Paid' and my_final_price is not none %}
+                                    <div class="bg-background ring-1 ring-border p-4 rounded-xl text-center">
+                                        <p class="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-1">Total Due</p>
+                                        <p class="text-3xl font-bold text-foreground">{{ my_final_price }}</p>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if doc.payment_instructions %}
+                                    <div class="bg-background/40 p-4 rounded-xl ring-1 ring-border space-y-2">
+                                        <p class="text-[10px] text-orange-400 uppercase tracking-widest font-black flex items-center gap-1">
+                                            <i data-lucide="info" class="size-3"></i> Instructions
+                                        </p>
+                                        <div class="prose prose-sm max-w-none text-muted-foreground leading-snug">
+                                            {{ doc.payment_instructions }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if doc.event_status != 'Completed' %}
+                                    <button onclick="cancelRegistration('{{ attendee_name }}')" class="w-full py-3 bg-rose-500/10 hover:bg-rose-500/20 ring-1 ring-rose-500/20 text-rose-400 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all text-sm">
+                                        Cancel request
+                                    </button>
+                                    {% endif %}
                                 </div>
-                            </div>
 
-                            {% if doc.is_paid == 'Paid' and my_final_price is not none %}
-                            <div class="bg-white p-4 rounded-xl border border-orange-100 mb-4 text-center shadow-inner">
-                                <p class="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">Total Due</p>
-                                <p class="text-3xl font-black text-charcoal">{{ my_final_price }}</p>
-                            </div>
-                            {% endif %}
-
-                            {% if doc.payment_instructions %}
-                            <div class="bg-white/60 p-4 rounded-xl border border-orange-100 mb-5">
-                                <p class="text-[10px] text-orange-800 uppercase tracking-widest font-black mb-2 flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[14px]">info</span> Instructions
-                                </p>
-                                <div class="prose prose-sm max-w-none text-gray-700 leading-snug">
-                                    {{ doc.payment_instructions }}
-                                </div>
-                            </div>
-                            {% endif %}
-                            
-                            {% if doc.event_status != 'Completed' %}
-                            <button onclick="cancelRegistration('{{ attendee_name }}')" class="text-xs text-red-500 hover:text-red-700 font-bold underline block text-center w-full transition-colors">
-                                Cancel request
-                            </button>
-                            {% endif %}
-                        </div>
-
-                    {% elif my_rsvp == 'Rejected' %}
-                        <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 mb-4 flex items-start gap-3">
-                            <span class="material-symbols-outlined mt-0.5">cancel</span>
-                            <div>
-                                <p class="font-bold">Application Declined</p>
-                                
-                                {% if rejection_reason %}
-                                    <p class="text-sm mt-1 text-red-700">
-                                        <span class="font-semibold">Reason:</span> {{ rejection_reason }}
-                                    </p>
-                                {% else %}
-                                    <p class="text-sm mt-1 text-red-700">
-                                        Unfortunately, your application could not be approved at this time.
-                                    </p>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                    {% elif my_rsvp == 'Canceled' %}
-                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 mb-4 flex items-center gap-3">
-                            <span class="material-symbols-outlined">block</span>
-                            <div>
-                                <p class="font-bold">Registration Canceled</p>
-                                <p class="text-xs">You can re-apply if spots are available.</p>
-                            </div>
-                        </div>
-                        
-                        {% if doc.event_status == 'Open for Registration' %}
-                             
-                             {% if doc.custom_fields %}
-                                <div id="custom-questions-container-reapply" class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
-                                    <h3 class="text-md font-semibold text-gray-800 mb-3">Additional Details</h3>
-                                    <div class="space-y-4">
-                                        {% for field in doc.custom_fields %}
-                                        <div class="custom-field-wrapper" data-depends-on="{{ field.depends_on or '' }}">
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                                {{ field.label }} {% if field.reqd %}<span class="text-red-500">*</span>{% endif %}
-                                            </label>
-                                            {% if field.fieldtype == 'Data' %}
-                                                <input type="text" name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                            {% elif field.fieldtype == 'Select' %}
-                                                <select name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                                                    <option value="">Select {{ field.label }}...</option>
-                                                    {% set options = (field.options or '').split('\n') %}
-                                                    {% for opt in options %}{% if opt %}<option value="{{ opt }}">{{ opt }}</option>{% endif %}{% endfor %}
-                                                </select>
-                                            {% elif field.fieldtype == 'Check' %}
-                                                <div class="flex items-center mt-2">
-                                                    <input type="checkbox" name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                                    <span class="ml-2 text-sm text-gray-700">{{ field.label }}</span>
-                                                </div>
+                            {% elif my_rsvp == 'Rejected' %}
+                                <div class="p-5 rounded-2xl bg-rose-500/10 ring-1 ring-rose-500/20 text-rose-400 space-y-3">
+                                    <div class="flex items-start gap-3">
+                                        <i data-lucide="x-circle" class="size-6 text-rose-400 shrink-0 mt-0.5"></i>
+                                        <div>
+                                            <p class="font-bold text-foreground">Application Declined</p>
+                                            {% if rejection_reason %}
+                                                <p class="text-xs text-muted-foreground mt-1">
+                                                    <span class="font-semibold">Reason:</span> {{ rejection_reason }}
+                                                </p>
+                                            {% else %}
+                                                <p class="text-xs text-muted-foreground mt-1">
+                                                    Unfortunately, your application could not be approved at this time.
+                                                </p>
                                             {% endif %}
                                         </div>
-                                        {% endfor %}
                                     </div>
                                 </div>
-                             {% endif %}
 
-                             {% if doc.is_paid == 'Paid' %}
-                             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
-                                 <label class="block text-sm font-medium text-gray-700 mb-2">Have a Promo Code?</label>
-                                 <div class="flex gap-2">
-                                     <input type="text" id="promo-code-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary uppercase font-bold text-gray-700" placeholder="ENTER CODE">
-                                     <button type="button" id="btn-apply-promo" class="px-4 py-2 bg-charcoal hover:bg-gray-800 text-white text-sm font-bold rounded-md transition-colors shadow-sm">Apply</button>
-                                 </div>
-                                 <p id="promo-message" class="text-xs mt-2 hidden"></p>
-                                 <hr class="my-3 border-gray-200">
-                                 <div class="flex justify-between items-center">
-                                     <span class="font-bold text-gray-600 text-sm">Total Due:</span>
-                                     <div class="text-right flex items-center gap-2">
-                                         <span id="original-price" class="text-lg font-black text-charcoal">{{ doc.ticket_price }}</span>
-                                         <span id="discounted-price" class="text-xl font-black text-green-600 hidden"></span>
-                                     </div>
-                                 </div>
-                             </div>
-                             {% endif %}
-                             <button id="btn-apply-sidebar" class="w-full py-4 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold shadow-lg shadow-primary/20 transition-all mb-4 flex justify-center items-center gap-2">
-                                <span>Re-Apply Now</span>
-                                <span class="material-symbols-outlined">refresh</span>
-                            </button>
-                        {% endif %}
-
-                    {% else %}
-                        
-                        {% if doc.event_status == 'Open for Registration' %}
-
-                            <!-- Custom Questions only show if the event is Open -->
-                            {% if doc.custom_fields %}
-                            <div id="custom-questions-container" class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
-                                <h3 class="text-md font-semibold text-gray-800 mb-3">Additional Details</h3>
-                                
-                                <div class="space-y-4">
-                                    {% for field in doc.custom_fields %}
-                                    <div class="custom-field-wrapper" data-depends-on="{{ field.depends_on or '' }}">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            {{ field.label }} {% if field.reqd %}<span class="text-red-500">*</span>{% endif %}
-                                        </label>
-
-                                        {% if field.fieldtype == 'Data' %}
-                                            <input type="text" name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        {% elif field.fieldtype == 'Select' %}
-                                            <select name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                                                <option value="">Select {{ field.label }}...</option>
-                                                {% set options = (field.options or '').split('\n') %}
-                                                {% for opt in options %}{% if opt %}<option value="{{ opt }}">{{ opt }}</option>{% endif %}{% endfor %}
-                                            </select>
-                                        {% elif field.fieldtype == 'Check' %}
-                                            <div class="flex items-center mt-2">
-                                                <input type="checkbox" name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                                <span class="ml-2 text-sm text-gray-700">{{ field.label }}</span>
+                            {% else %}
+                                <!-- RSVP is None or Canceled (Allow application) -->
+                                {% if doc.event_status == 'Open for Registration' %}
+                                    
+                                    <!-- Custom Questions container -->
+                                    {% if doc.custom_fields %}
+                                    <div id="custom-questions-container" class="bg-background ring-1 ring-border p-4 rounded-xl mb-4">
+                                        <h3 class="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider text-left">Additional Details</h3>
+                                        <div class="space-y-4 text-left">
+                                            {% for field in doc.custom_fields %}
+                                            <div class="custom-field-wrapper" data-depends-on="{{ field.depends_on or '' }}">
+                                                <label class="block text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-widest">
+                                                    {{ field.label }} {% if field.reqd %}<span class="text-red-500">*</span>{% endif %}
+                                                </label>
+                                                {% if field.fieldtype == 'Data' %}
+                                                    <input type="text" name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-full bg-background border-none ring-1 ring-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground">
+                                                {% elif field.fieldtype == 'Select' %}
+                                                    <div class="relative">
+                                                        <select name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-full bg-background border-none ring-1 ring-border rounded-xl pl-4 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground bg-white dark:bg-card cursor-pointer">
+                                                            <option value="">Select {{ field.label }}...</option>
+                                                            {% set options = (field.options or '').split('\n') %}
+                                                            {% for opt in options %}{% if opt %}<option value="{{ opt }}">{{ opt }}</option>{% endif %}{% endfor %}
+                                                        </select>
+                                                    </div>
+                                                {% elif field.fieldtype == 'Check' %}
+                                                    <div class="flex items-center mt-2 gap-2">
+                                                        <input type="checkbox" name="{{ field.label }}" data-reqd="{{ field.reqd }}" class="custom-field-input w-4 h-4 text-primary border-none ring-1 ring-border rounded bg-background focus:ring-primary focus:ring-2">
+                                                        <span class="text-sm text-foreground">{{ field.label }}</span>
+                                                    </div>
+                                                {% endif %}
                                             </div>
-                                        {% endif %}
+                                            {% endfor %}
+                                        </div>
                                     </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
+                                    {% endif %}
+
+                                    <!-- Promo Code UI for paid events -->
+                                    {% if doc.is_paid == 'Paid' %}
+                                    <div class="bg-background ring-1 ring-border p-4 rounded-xl mb-4 space-y-3">
+                                        <label class="block text-xs font-bold text-muted-foreground uppercase tracking-widest text-left">Promo code</label>
+                                        <div class="flex gap-2">
+                                            <input type="text" id="promo-code-input" class="flex-1 bg-background border-none ring-1 ring-border rounded-xl px-4 py-2.5 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 tracking-widest uppercase font-bold text-foreground" placeholder="ENTER CODE">
+                                            <button type="button" id="btn-apply-promo" class="px-4 py-2.5 bg-foreground text-background rounded-xl text-sm font-medium hover:bg-foreground/90 transition-colors">Apply</button>
+                                        </div>
+                                        <p id="promo-message" class="text-xs text-left hidden"></p>
+                                        
+                                        <div class="pt-3 border-t border-border space-y-2 text-sm text-left">
+                                            <div class="flex items-center justify-between text-muted-foreground">
+                                                <span>Subtotal</span>
+                                                <span id="original-price">{{ doc.ticket_price }}</span>
+                                            </div>
+                                            <div id="discount-row" class="flex items-center justify-between text-emerald-400 hidden">
+                                                <span>Discount</span>
+                                                <span id="discount-value"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-2 border-t border-border">
+                                                <span class="font-medium text-foreground">Total due</span>
+                                                <span id="discounted-price" class="text-2xl font-semibold text-foreground">{{ doc.ticket_price }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Registration Submit Button -->
+                                    <button id="btn-apply-sidebar" class="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-medium flex items-center justify-center gap-2 hover:bg-primary/90 transition-all hover:-translate-y-0.5 shadow-lg shadow-primary/30">
+                                        <span>{% if my_rsvp == 'Canceled' %}Re-Apply Now{% else %}Apply Now{% endif %}</span>
+                                        <i data-lucide="send" class="size-4"></i>
+                                    </button>
+
+                                {% elif doc.event_status == 'Sold Out' %}
+                                    <button disabled class="w-full py-4 bg-card ring-1 ring-border text-muted-foreground rounded-2xl font-semibold cursor-not-allowed text-center">
+                                        Sold Out
+                                    </button>
+                                {% else %}
+                                    <button disabled class="w-full py-4 bg-card ring-1 ring-border text-muted-foreground rounded-2xl font-semibold cursor-not-allowed text-center">
+                                        {{ doc.event_status }}
+                                    </button>
+                                {% endif %}
+
                             {% endif %}
 
-                            <!-- PROMO CODE UI (For New Applications) -->
-                            {% if doc.is_paid == 'Paid' %}
-                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Have a Promo Code?</label>
-                                <div class="flex gap-2">
-                                    <input type="text" id="promo-code-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary uppercase font-bold text-gray-700" placeholder="ENTER CODE">
-                                    <button type="button" id="btn-apply-promo" class="px-4 py-2 bg-charcoal hover:bg-gray-800 text-white text-sm font-bold rounded-md transition-colors shadow-sm">Apply</button>
-                                </div>
-                                <p id="promo-message" class="text-xs mt-2 hidden"></p>
-                                <hr class="my-3 border-gray-200">
-                                <div class="flex justify-between items-center">
-                                    <span class="font-bold text-gray-600 text-sm">Total Due:</span>
-                                    <div class="text-right flex items-center gap-2">
-                                        <span id="original-price" class="text-lg font-black text-charcoal">{{ doc.ticket_price }}</span>
-                                        <span id="discounted-price" class="text-xl font-black text-green-600 hidden"></span>
-                                    </div>
-                                </div>
-                            </div>
+                            {% if doc.event_status == 'Open for Registration' and my_rsvp != 'Registered' and my_rsvp != 'Pending Approval' and my_rsvp != 'Pending Transaction' %}
+                            <p class="text-center text-xs text-muted-foreground mt-4">
+                                Approval is required for all applications.
+                            </p>
                             {% endif %}
-                            <!-- END PROMO CODE UI -->
 
-                            <button id="btn-apply-sidebar" class="w-full py-4 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold shadow-lg shadow-primary/20 transition-all mb-4 flex justify-center items-center gap-2">
-                                <span>Apply Now</span>
-                                <span class="material-symbols-outlined">send</span>
-                            </button>
-                        
-                        {% elif doc.event_status == 'Sold Out' %}
-                            <button disabled class="w-full py-4 rounded-xl bg-gray-100 text-gray-400 font-bold border border-gray-200 cursor-not-allowed">
-                                Sold Out
-                            </button>
-                        
-                        {% else %}
-                            <button disabled class="w-full py-4 rounded-xl bg-gray-100 text-gray-400 font-bold border border-gray-200 cursor-not-allowed">
-                                {{ doc.event_status }}
-                            </button>
                         {% endif %}
-
-                    {% endif %}
-
-                {% endif %}
-                
-                {% if doc.event_status == 'Open for Registration' %}
-                    <p class="text-center text-xs text-gray-400 mt-6">
-                        Approval is required for all applications.
-                    </p>
-                {% endif %}
+                    </div>
+                </div>
             </div>
-        </aside>
-    </div>
-</main>
+        </div>
+    </section>
 
-<footer class="border-t border-border-gray py-12 mt-12 bg-light-gray">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <p class="text-gray-500 text-sm">Powered by Frappe Events App</p>
-    </div>
-</footer>
+    <!-- Footer -->
+    <footer class="border-t border-border py-12 mt-12 bg-card/40">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-muted-foreground text-sm">Powered by Frappe Events App</p>
+        </div>
+    </footer>
 
-<script>
-    // --- DEPENDENCY LOGIC ---
-    function checkDependencies() {
-        const wrappers = document.querySelectorAll('.custom-field-wrapper');
-        
-        wrappers.forEach(wrapper => {
-            const dependsOn = wrapper.getAttribute('data-depends-on');
-            const inputInsideWrapper = wrapper.querySelector('.custom-field-input');
+    <!-- Script handlers -->
+    <script>
+        // --- DEPENDENCY LOGIC ---
+        function checkDependencies() {
+            const wrappers = document.querySelectorAll('.custom-field-wrapper');
             
-            if (dependsOn && dependsOn.trim() !== 'None' && dependsOn.trim() !== '') {
-                const parts = dependsOn.split('==');
-                if (parts.length === 2) {
-                    const targetLabel = parts[0].trim();
-                    const targetValue = parts[1].trim();
+            wrappers.forEach(wrapper => {
+                const dependsOn = wrapper.getAttribute('data-depends-on');
+                const inputInsideWrapper = wrapper.querySelector('.custom-field-input');
+                
+                if (dependsOn && dependsOn.trim() !== 'None' && dependsOn.trim() !== '') {
+                    const parts = dependsOn.split('==');
+                    if (parts.length === 2) {
+                        const targetLabel = parts[0].trim();
+                        const targetValue = parts[1].trim();
 
-                    const targetInput = document.querySelector(`.custom-field-input[name="${targetLabel}"]`);
-                    
-                    if (targetInput) {
-                        let currentValue = targetInput.value || '';
-                        if (targetInput.type === 'checkbox') {
-                            currentValue = targetInput.checked ? 'Yes' : 'No';
-                        }
+                        const targetInput = document.querySelector(`.custom-field-input[name="${targetLabel}"]`);
+                        
+                        if (targetInput) {
+                            let currentValue = targetInput.value || '';
+                            if (targetInput.type === 'checkbox') {
+                                currentValue = targetInput.checked ? 'Yes' : 'No';
+                            }
 
-                        if (currentValue.trim() === targetValue.trim()) {
-                            wrapper.style.display = 'block';
-                            if (inputInsideWrapper) inputInsideWrapper.disabled = false;
-                        } else {
-                            wrapper.style.display = 'none';
-                            if (inputInsideWrapper) inputInsideWrapper.disabled = true;
+                            if (currentValue.trim() === targetValue.trim()) {
+                                wrapper.style.display = 'block';
+                                if (inputInsideWrapper) inputInsideWrapper.disabled = false;
+                            } else {
+                                wrapper.style.display = 'none';
+                                if (inputInsideWrapper) inputInsideWrapper.disabled = true;
+                            }
                         }
                     }
+                } else {
+                    wrapper.style.display = 'block';
+                    if (inputInsideWrapper) inputInsideWrapper.disabled = false;
                 }
-            } else {
-                wrapper.style.display = 'block';
-                if (inputInsideWrapper) inputInsideWrapper.disabled = false;
+            });
+        }
+
+        document.querySelectorAll('.custom-field-input').forEach(input => {
+            input.addEventListener('change', checkDependencies);
+            input.addEventListener('input', checkDependencies);
+        });
+
+        checkDependencies();
+
+        // Lucide Icons & Theme Toggler initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+
+            const toggleBtn = document.getElementById('theme-toggle');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const next = isDark ? 'light' : 'dark';
+                    document.documentElement.classList.remove('dark', 'light');
+                    document.documentElement.classList.add(next);
+                    localStorage.setItem('evently-theme', next);
+                });
             }
         });
-    }
 
-    document.querySelectorAll('.custom-field-input').forEach(input => {
-        input.addEventListener('change', checkDependencies);
-        input.addEventListener('input', checkDependencies);
-    });
+        // 1. Promo Code Validation Handler
+        let appliedPromoCode = "";
+        const basePrice = parseFloat("{{ doc.ticket_price or 0 }}");
 
-    checkDependencies();
+        const applyPromoBtn = document.getElementById('btn-apply-promo');
+        if (applyPromoBtn) {
+            applyPromoBtn.onclick = function() {
+                const codeInput = document.getElementById('promo-code-input').value.trim().toUpperCase();
+                const msg = document.getElementById('promo-message');
+                const origPrice = document.getElementById('original-price');
+                const discPrice = document.getElementById('discounted-price');
+                const discRow = document.getElementById('discount-row');
+                const discVal = document.getElementById('discount-value');
 
-    // 1. Logic for Promo Codes & Applying
-    let appliedPromoCode = "";
-    const basePrice = parseFloat("{{ doc.ticket_price or 0 }}");
+                if(!codeInput) return;
 
-    // Promo Code Validation
-    const applyPromoBtn = document.getElementById('btn-apply-promo');
-    if (applyPromoBtn) {
-        applyPromoBtn.onclick = function() {
-            const codeInput = document.getElementById('promo-code-input').value.trim().toUpperCase();
-            const msg = document.getElementById('promo-message');
-            const origPrice = document.getElementById('original-price');
-            const discPrice = document.getElementById('discounted-price');
-
-            if(!codeInput) return;
-
-            applyPromoBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">refresh</span>';
-            
-            frappe.call({
-                method: "event_management.event_management.doctype.event_attendee.event_attendee.validate_promo_code",
-                args: { 
-                    promo_code: codeInput,
-                    event_name: "{{ doc.name }}" 
-                },
-                callback: function(r) {
-                    applyPromoBtn.innerHTML = 'Apply';
-                    
-                    if(r.message && r.message.valid) {
-                        const discount = r.message.discount_percentage;
-                        const newPrice = basePrice - (basePrice * (discount / 100));
+                applyPromoBtn.innerHTML = '<i data-lucide="loader" class="size-4 animate-spin"></i>';
+                if (window.lucide) window.lucide.createIcons();
+                
+                frappe.call({
+                    method: "event_management.event_management.doctype.event_attendee.event_attendee.validate_promo_code",
+                    args: { 
+                        promo_code: codeInput,
+                        event_name: "{{ doc.name }}" 
+                    },
+                    callback: function(r) {
+                        applyPromoBtn.innerHTML = 'Apply';
                         
-                        appliedPromoCode = codeInput; 
-                        
-                        msg.textContent = `Success! ${discount}% discount applied.`;
-                        msg.className = "text-xs mt-2 text-green-600 font-bold block";
-                        document.getElementById('promo-code-input').classList.add('border-green-500', 'bg-green-50');
-                        
-                        origPrice.classList.add("line-through", "text-gray-400", "text-sm");
-                        origPrice.classList.remove("text-lg", "text-charcoal");
-                        
-                        discPrice.textContent = newPrice.toFixed(2);
-                        discPrice.classList.remove("hidden");
-                    } else {
-                        msg.textContent = r.message ? r.message.message : "Invalid promo code.";
-                        msg.className = "text-xs mt-2 text-red-500 font-bold block";
-                        document.getElementById('promo-code-input').classList.remove('border-green-500', 'bg-green-50');
-                        
-                        appliedPromoCode = "";
-                        origPrice.classList.remove("line-through", "text-gray-400", "text-sm");
-                        origPrice.classList.add("text-lg", "text-charcoal");
-                        discPrice.classList.add("hidden");
+                        if(r.message && r.message.valid) {
+                            const discount = r.message.discount_percentage;
+                            const newPrice = basePrice - (basePrice * (discount / 100));
+                            
+                            appliedPromoCode = codeInput; 
+                            
+                            msg.textContent = `Success! ${discount}% discount applied.`;
+                            msg.className = "text-xs text-green-400 font-bold block";
+                            document.getElementById('promo-code-input').classList.add('ring-green-500/50', 'bg-green-500/10');
+                            
+                            if (origPrice) origPrice.classList.add("line-through", "text-muted-foreground", "text-xs");
+                            if (discRow) discRow.classList.remove("hidden");
+                            if (discVal) discVal.textContent = `-${(basePrice * (discount / 100)).toFixed(2)}`;
+                            if (discPrice) discPrice.textContent = newPrice.toFixed(2);
+                        } else {
+                            msg.textContent = r.message ? r.message.message : "Invalid promo code.";
+                            msg.className = "text-xs text-red-500 font-bold block";
+                            document.getElementById('promo-code-input').classList.remove('ring-green-500/50', 'bg-green-500/10');
+                            
+                            if (origPrice) origPrice.classList.remove("line-through", "text-muted-foreground", "text-xs");
+                            if (discRow) discRow.classList.add("hidden");
+                            if (discPrice) discPrice.textContent = basePrice.toFixed(2);
+                            
+                            appliedPromoCode = "";
+                        }
                     }
+                });
+            };
+        }
+
+        // 2. Main Registration Submit Handler
+        const applyBtn = document.getElementById('btn-apply-sidebar');
+        if (applyBtn) {
+            applyBtn.onclick = function() {
+                let custom_answers = {};
+                let isValid = true;
+                const inputs = document.querySelectorAll('.custom-field-input');
+                
+                inputs.forEach(input => {
+                    if (input.disabled) return; 
+                    const label = input.name;
+                    const isReqd = input.getAttribute('data-reqd') == '1';
+                    let value = input.value;
+
+                    if (input.type === 'checkbox') value = input.checked ? 'Yes' : 'No';
+
+                    if (isReqd && (!value || value === '')) {
+                        isValid = false;
+                        input.classList.add('ring-red-500/50', 'ring-2'); 
+                    } else {
+                        input.classList.remove('ring-red-500/50', 'ring-2');
+                    }
+                    custom_answers[label] = value;
+                });
+
+                if (!isValid) {
+                    frappe.msgprint({ title: 'Missing Details', message: 'Please fill in all mandatory fields.', indicator: 'red' });
+                    return;
                 }
-            });
-        };
-    }
 
-    // Main Registration Submit
-    const applyBtn = document.getElementById('btn-apply-sidebar');
-    if (applyBtn) {
-        applyBtn.onclick = function() {
-            let custom_answers = {};
-            let isValid = true;
-            const inputs = document.querySelectorAll('.custom-field-input');
-            
-            inputs.forEach(input => {
-                if (input.disabled) return; 
-                const label = input.name;
-                const isReqd = input.getAttribute('data-reqd') == '1';
-                let value = input.value;
+                applyBtn.disabled = true;
+                applyBtn.innerHTML = '<i data-lucide="loader" class="size-4 animate-spin"></i> Processing...';
+                if (window.lucide) window.lucide.createIcons();
 
-                if (input.type === 'checkbox') value = input.checked ? 'Yes' : 'No';
+                frappe.call({
+                    method: "frappe.client.insert",
+                    args: {
+                        doc: {
+                            doctype: "Event Attendee",
+                            event_activity: "{{ doc.name }}",
+                            custom_answers: JSON.stringify(custom_answers),
+                            promo_code: appliedPromoCode
+                        }
+                    },
+                    callback: function(r) {
+                        if(!r.exc) {
+                            frappe.msgprint({ title: 'Success', indicator: 'green', message: 'Application sent successfully!' });
+                            setTimeout(() => window.location.reload(), 1500);
+                        } else {
+                            applyBtn.disabled = false;
+                            applyBtn.innerHTML = "<span>Apply Now</span><i data-lucide='send' class='size-4'></i>";
+                            if (window.lucide) window.lucide.createIcons();
+                        }
+                    }
+                });
+            }
+        }
 
-                if (isReqd && (!value || value === '')) {
-                    isValid = false;
-                    input.classList.add('border-red-500', 'ring-1', 'ring-red-500'); 
-                } else {
-                    input.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
-                }
-                custom_answers[label] = value;
-            });
-
-            if (!isValid) {
-                frappe.msgprint({ title: 'Missing Details', message: 'Please fill in all mandatory fields.', indicator: 'red' });
+        // 3. Cancel Registration Handler
+        function cancelRegistration(attendeeName) {
+            if(!confirm("Are you sure you want to cancel your registration? This action cannot be undone immediately.")) {
                 return;
             }
 
-            applyBtn.disabled = true;
-            applyBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Processing...';
-
             frappe.call({
-                method: "frappe.client.insert",
+                method: "event_management.event_management.doctype.event_attendee.event_attendee.cancel_registration",
                 args: {
-                    doc: {
-                        doctype: "Event Attendee",
-                        event_activity: "{{ doc.name }}",
-                        custom_answers: JSON.stringify(custom_answers),
-                        promo_code: appliedPromoCode // Passing the promo code!
-                    }
+                    attendee_name: attendeeName
                 },
                 callback: function(r) {
                     if(!r.exc) {
-                        frappe.msgprint({ title: 'Success', indicator: 'green', message: 'Application sent successfully!' });
+                        frappe.msgprint({
+                            title: 'Cancelled',
+                            message: 'Your registration has been cancelled.',
+                            indicator: 'orange'
+                        });
                         setTimeout(() => window.location.reload(), 1500);
-                    } else {
-                        applyBtn.disabled = false;
-                        applyBtn.innerHTML = "<span>Apply Now</span><span class='material-symbols-outlined'>send</span>";
                     }
                 }
             });
         }
-    }
 
-    // 2. Logic for Cancelling
-    function cancelRegistration(attendeeName) {
-        if(!confirm("Are you sure you want to cancel your registration? This action cannot be undone immediately.")) {
-            return;
-        }
+        // 4. Google Calendar Formatting & Export
+        function addToGoogleCalendar() {
+            const title = encodeURIComponent("{{ doc.event_title }}");
+            const description = encodeURIComponent("{{ doc.event_description | striptags | replace('\n', ' ') | replace('\r', '') }}");
+            
+            const startDate = "{{ doc.start_date | replace(' ', 'T') }}";
+            const endDate = "{{ doc.end_date | replace(' ', 'T') if doc.end_date else '' }}";
 
-        frappe.call({
-            method: "event_management.event_management.doctype.event_attendee.event_attendee.cancel_registration",
-            args: {
-                attendee_name: attendeeName
-            },
-            callback: function(r) {
-                if(!r.exc) {
-                    frappe.msgprint({
-                        title: 'Cancelled',
-                        message: 'Your registration has been cancelled.',
-                        indicator: 'orange'
-                    });
-                    setTimeout(() => window.location.reload(), 1500);
-                }
+            const formatGoogleDate = (dateString) => {
+                if (!dateString) return null;
+                const d = new Date(dateString);
+                if (isNaN(d.getTime())) return null;
+                return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            };
+
+            const dtStart = formatGoogleDate(startDate);
+            let dtEnd = formatGoogleDate(endDate);
+
+            if (!dtEnd && dtStart) {
+                const d = new Date(startDate);
+                d.setHours(d.getHours() + 1);
+                dtEnd = d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
             }
-        });
-    }
 
-    // 3. Logic for Add to Google Calendar Directly
-    function addToGoogleCalendar() {
-        const title = encodeURIComponent("{{ doc.event_title }}");
-        const description = encodeURIComponent("{{ doc.event_description | striptags | replace('\n', ' ') | replace('\r', '') }}");
-        
-        const startDate = "{{ doc.start_date | replace(' ', 'T') }}";
-        const endDate = "{{ doc.end_date | replace(' ', 'T') if doc.end_date else '' }}";
+            const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dtStart}/${dtEnd}&details=${description}`;
 
-        const formatGoogleDate = (dateString) => {
-            if (!dateString) return null;
-            const d = new Date(dateString);
-            if (isNaN(d.getTime())) return null;
-            return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-        };
-
-        const dtStart = formatGoogleDate(startDate);
-        let dtEnd = formatGoogleDate(endDate);
-
-        if (!dtEnd && dtStart) {
-            const d = new Date(startDate);
-            d.setHours(d.getHours() + 1);
-            dtEnd = d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            window.open(googleUrl, '_blank');
         }
-
-        const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dtStart}/${dtEnd}&details=${description}`;
-
-        window.open(googleUrl, '_blank');
-    }
-</script>
-
-</body>
-</html>
+    </script>
+</div>
 {% endblock %}
