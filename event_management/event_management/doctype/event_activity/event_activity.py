@@ -20,6 +20,12 @@ class EventActivity(WebsiteGenerator):
             raise frappe.Redirect
         # ------------------------------------------------
 
+        # On-the-fly status refresh when viewing detail page
+        old_status = self.event_status
+        self.update_status()
+        if self.event_status != old_status:
+            self.db_set("event_status", self.event_status, update_modified=False)
+
     def validate(self):
         """
         Run checks before saving the Event.
@@ -63,7 +69,9 @@ class EventActivity(WebsiteGenerator):
         })
 
         # 1. Check if Event is Completed (Time-based - Highest Priority)
-        if self.end_date and get_datetime(self.end_date) < now:
+        # Effective end date: end_date if provided, otherwise start_date
+        effective_end = self.end_date or self.start_date
+        if effective_end and get_datetime(effective_end) < now:
             self.event_status = "Completed"
             return 
 
@@ -84,7 +92,6 @@ class EventActivity(WebsiteGenerator):
         
         else:
             # Fallback: If no start date is set, assume it is open immediately
-            # (unless it was already set to something else manually, but we enforce Open here)
             if self.event_status != "Sold Out":
                 self.event_status = "Open for Registration"
 

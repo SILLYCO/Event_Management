@@ -3,6 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
+from frappe.utils import get_datetime, now_datetime
 
 class EventAttendee(Document):
     def before_insert(self):
@@ -33,11 +34,20 @@ class EventAttendee(Document):
         }):
             frappe.throw("You have already applied for this event.")
 
-        # 4. Check Event Status
+        # 4. Check Event Status and Date Expiration
         event_doc = frappe.get_doc("Event Activity", self.event_activity)
         
-        if event_doc.event_status == "Completed":
-            frappe.throw("This event has ended.")
+        if hasattr(event_doc, "update_status"):
+            old_status = event_doc.event_status
+            event_doc.update_status()
+            if event_doc.event_status != old_status:
+                event_doc.db_set("event_status", event_doc.event_status, update_modified=False)
+
+        now = now_datetime()
+        effective_end = event_doc.end_date or event_doc.start_date
+
+        if (effective_end and get_datetime(effective_end) < now) or event_doc.event_status == "Completed":
+            frappe.throw("Registration is closed because this event has already taken place or ended.")
         
         if event_doc.event_status == "Sold Out":
             frappe.throw("Sorry, this event is fully booked.")

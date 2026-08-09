@@ -58,6 +58,23 @@ class TestEventAttendee(FrappeTestCase):
         reg3.event_activity = self.event3
         reg3.insert(ignore_permissions=True) # Should pass
 
+    def test_past_event_registration_blocked(self):
+        frappe.set_user(self.user)
+        # Create an event in the past (2 days ago)
+        past_start = add_to_date(now_datetime(), days=-2)
+        past_end = add_to_date(now_datetime(), days=-1)
+        past_event = self.create_test_event("Past Event", past_start, past_end)
+
+        # Check status is automatically Completed
+        event_doc = frappe.get_doc("Event Activity", past_event)
+        event_doc.update_status()
+        self.assertEqual(event_doc.event_status, "Completed")
+
+        # Attempt registration should raise ValidationError
+        reg = frappe.new_doc("Event Attendee")
+        reg.event_activity = past_event
+        self.assertRaises(frappe.ValidationError, reg.insert, ignore_permissions=True)
+
     def create_test_promo_code(self, name, limit=5, discount=10):
         if frappe.db.exists("Event Promo Code", name):
             frappe.delete_doc("Event Promo Code", name, ignore_permissions=True)

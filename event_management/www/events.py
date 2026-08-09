@@ -14,11 +14,20 @@ def get_context(context):
         filters={"published": 1},
         fields=[
             "name", "event_title", "event_category", "event_status", 
-            "start_date", "event_image", "route", "event_description", 
+            "start_date", "end_date", "event_image", "route", "event_description", 
             "capacity", "show_capacity_on_website"
         ],
         order_by="start_date desc"
     )
+
+    # Refresh statuses on-the-fly for list catalog view
+    for event in events:
+        doc = frappe.get_doc("Event Activity", event.name)
+        old_status = doc.event_status
+        doc.update_status()
+        if doc.event_status != old_status:
+            doc.db_set("event_status", doc.event_status, update_modified=False)
+        event.event_status = doc.event_status
 
     # 2. Extract unique categories for filter buttons
     categories = set()
