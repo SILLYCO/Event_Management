@@ -42,6 +42,7 @@ def get_context(context):
         if e.event_status:
             statuses.add(e.event_status)
     context.statuses = sorted(list(statuses))
+    context.user_status_options = ["Registered", "Pending Approval", "Pending Transaction"]
 
     # 4. Fetch user RSVPs and calculate Total Registered per event
     user_status_map = {}
