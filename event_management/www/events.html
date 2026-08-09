@@ -576,9 +576,9 @@
                     const matchesSearch = title.includes(searchTerm);
                     const matchesCategory = (activeCategory === 'all' || category === activeCategory);
                     const matchesStatus = (
-                        activeStatus === 'all' || 
-                        eventStatus === activeStatus || 
-                        userStatus === activeStatus
+                        activeStatus === 'all'
+                            ? (eventStatus !== 'Completed')
+                            : (eventStatus === activeStatus || userStatus === activeStatus)
                     );
 
                     if (matchesSearch && matchesCategory && matchesStatus) {
@@ -637,6 +637,9 @@
                     filterEvents();
                 });
             });
+
+            // Run initial filtering on page load to hide completed events from 'All Events' view
+            filterEvents();
         });
     </script>
 </div>
