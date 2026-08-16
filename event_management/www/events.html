@@ -1,557 +1,260 @@
 {% extends "templates/web.html" %}
 
 {% block page_content %}
-    <!-- Lucide Icons & Fonts -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS CDN -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
-        // Init theme immediately to prevent flashing
-        (function() {
-            const stored = localStorage.getItem("evently-theme");
-            const theme = stored === "light" ? "light" : "dark";
-            document.documentElement.classList.remove("light", "dark");
-            document.documentElement.classList.add(theme);
-        })();
-
         tailwind.config = {
-            darkMode: "class",
             theme: {
                 extend: {
-                    colors: {
-                        background: 'var(--background)',
-                        foreground: 'var(--foreground)',
-                        card: {
-                            DEFAULT: 'var(--card)',
-                            foreground: 'var(--card-foreground)',
-                        },
-                        primary: {
-                            DEFAULT: 'var(--primary)',
-                            foreground: 'var(--primary-foreground)',
-                        },
-                        secondary: {
-                            DEFAULT: 'var(--secondary)',
-                            foreground: 'var(--secondary-foreground)',
-                        },
-                        muted: {
-                            DEFAULT: 'var(--muted)',
-                            foreground: 'var(--muted-foreground)',
-                        },
-                        border: 'var(--border)',
-                        input: 'var(--input)',
-                        ring: 'var(--ring)',
-                        deep: 'var(--deep)',
-                        electric: 'var(--electric)',
-                        midnight: 'var(--midnight)',
-                        surface: 'var(--surface)',
+                    colors: { "primary": "#137fec", "charcoal": "#0f172a", "soft-bg": "#f8fafc" },
+                    fontFamily: { "display": ["Inter", "sans-serif"] },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                     },
-                    fontFamily: {
-                        display: ["Manrope", "sans-serif"],
-                        sora: ["Sora", "sans-serif"],
-                        manrope: ["Manrope", "sans-serif"],
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
                     }
                 }
             }
         }
     </script>
-    
-    <!-- Lovable Color Variables -->
     <style>
-        :root {
-            --radius: 0.875rem;
-            --midnight: #0a0a1a;
-            --surface: #141432;
-            --deep: #1e1e5a;
-            --electric: #4f46e5;
-
-            --background: var(--midnight);
-            --foreground: #f8fafc;
-            --card: var(--surface);
-            --card-foreground: #f8fafc;
-            --popover: var(--surface);
-            --popover-foreground: #f8fafc;
-            --primary: var(--electric);
-            --primary-foreground: #ffffff;
-            --secondary: var(--deep);
-            --secondary-foreground: #f8fafc;
-            --muted: var(--surface);
-            --muted-foreground: #94a3b8;
-            --accent: var(--deep);
-            --accent-foreground: #f8fafc;
-            --destructive: #ef4444;
-            --destructive-foreground: #ffffff;
-            --border: rgba(255, 255, 255, 0.08);
-            --input: rgba(255, 255, 255, 0.1);
-            --ring: var(--electric);
-        }
-
-        html.light, :root.light {
-            --midnight: #f7f6f2;
-            --surface: #ffffff;
-            --deep: #ebe9f8;
-            --electric: #4f46e5;
-
-            --background: var(--midnight);
-            --foreground: #1e293b;
-            --card: var(--surface);
-            --card-foreground: #1e293b;
-            --popover: var(--surface);
-            --popover-foreground: #1e293b;
-            --primary: var(--electric);
-            --primary-foreground: #ffffff;
-            --secondary: var(--deep);
-            --secondary-foreground: #1e293b;
-            --muted: var(--deep);
-            --muted-foreground: #64748b;
-            --accent: var(--deep);
-            --accent-foreground: #1e293b;
-            --destructive: #dc2626;
-            --destructive-foreground: #ffffff;
-            --border: rgba(0, 0, 0, 0.08);
-            --input: rgba(0, 0, 0, 0.1);
-            --ring: var(--electric);
-        }
-
-        body {
-            background-color: var(--background) !important;
-            color: var(--foreground) !important;
-            font-family: 'Manrope', sans-serif !important;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Sora', sans-serif;
-            letter-spacing: -0.01em;
-        }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        * {
-            border-color: var(--border);
-        }
-
-        /* Specific CSS overrides requested by user */
-        .controls-bar {
-            background-color: #101028 !important;
-        }
-        html.light .controls-bar {
-            background-color: #fcfbfa !important;
-        }
-
-        .filter-btn.active {
-            background-color: #4f46e5 !important;
-            color: #ffffff !important;
-            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3) !important;
-        }
-
-        #event-search {
-            background-color: #ffffff !important;
-            color: #1e293b !important;
-        }
-        .dark #event-search {
-            background-color: #0d0d20 !important;
-            color: #f8fafc !important;
-        }
-
-        /* Theme toggle SVGs visibility fix */
-        #sun-icon {
-            display: none !important;
-        }
-        #moon-icon {
-            display: block !important;
-        }
-        .dark #sun-icon {
-            display: block !important;
-        }
-        .dark #moon-icon {
-            display: none !important;
-        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); }
+        .card-shadow-hover { box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08); }
     </style>
+</head>
+<body class="bg-soft-bg min-h-screen font-display pb-20 selection:bg-primary selection:text-white">
 
-<div class="min-h-screen bg-background text-foreground overflow-x-hidden pb-10">
-
-    {%- macro get_status_dot(status) -%}
-      {%- if status == 'Open for Registration' -%}
-        bg-emerald-400
-      {%- elif status == 'Opening Soon' -%}
-        bg-amber-400
-      {%- elif status == 'Sold Out' or status == 'Cancelled' -%}
-        bg-rose-400
-      {%- else -%}
-        bg-gray-400
-      {%- endif -%}
-    {%- endmacro -%}
-
-    {%- macro get_status_label(status) -%}
-      {%- if status == 'Open for Registration' -%}
-        Open Now
-      {%- elif status == 'Opening Soon' -%}
-        Opening Soon
-      {%- elif status == 'Sold Out' -%}
-        Sold Out
-      {%- elif status == 'Cancelled' -%}
-        Cancelled
-      {%- else -%}
-        {{ status }}
-      {%- endif -%}
-    {%- endmacro -%}
-
-    <!-- Ambient background -->
-    <div class="pointer-events-none fixed inset-0 -z-10">
-        <div class="absolute -top-40 -left-40 size-[500px] rounded-full bg-primary/20 blur-[140px]"></div>
-        <div class="absolute top-1/3 -right-40 size-[500px] rounded-full bg-deep/40 blur-[140px]"></div>
-        <div class="absolute inset-0 opacity-[0.04]"
-             style="background-image: linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px); background-size: 56px 56px;">
+    <!-- Hero Header -->
+    <div class="relative bg-white overflow-hidden border-b border-gray-100">
+        <div class="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px] opacity-40"></div>
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-primary text-sm font-bold mb-6 tracking-wide uppercase">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
+                Discover Experiences
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-black text-charcoal tracking-tight mb-6">Explore Upcoming Events</h1>
+            <p class="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto">Find your next adventure, scout camp, or community gathering. Secure your spot today.</p>
         </div>
     </div>
 
-    <!-- Theme Toggle Floating Button (Positioned at top right below navbar) -->
-    <div class="max-w-[1400px] mx-auto px-6 lg:px-10 pt-4 flex justify-end">
-        <button id="theme-toggle" aria-label="Toggle theme" class="size-10 grid place-items-center rounded-full bg-card ring-1 ring-border hover:bg-card/70 transition-colors">
-            <!-- Moon icon (shows in light mode) -->
-            <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="size-4 text-foreground animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-            </svg>
-            <!-- Sun icon (shows in dark mode) -->
-            <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="size-4 text-foreground animate-spin-slow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="4"/>
-                <path d="M12 2v2"/>
-                <path d="M12 20v2"/>
-                <path d="m4.93 4.93 1.41 1.41"/>
-                <path d="m17.66 17.66 1.41 1.41"/>
-                <path d="M2 12h2"/>
-                <path d="M20 12h2"/>
-                <path d="m6.34 17.66-1.41 1.41"/>
-                <path d="m19.07 4.93-1.41 1.41"/>
-            </svg>
-        </button>
-    </div>
-
-    <!-- Hero Section -->
-    <section class="max-w-[1400px] mx-auto px-6 lg:px-10 pt-4 pb-14">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-end">
-            <div class="lg:col-span-8 text-left">
-                {% set open_count = events | selectattr('event_status', 'equalto', 'Open for Registration') | list | length %}
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-card ring-1 ring-border text-xs font-medium text-muted-foreground mb-6">
-                    <span class="relative flex size-2">
-                        <span class="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
-                        <span class="relative inline-flex rounded-full size-2 bg-emerald-400"></span>
-                    </span>
-                    {{ open_count }} events open now
-                </div>
-                <h1 class="text-[clamp(2.5rem,6vw,5.5rem)] font-semibold leading-[0.95] tracking-tight text-balance text-foreground">
-                    Every gathering, <span class="italic font-normal text-muted-foreground">worth</span><br/>showing up for.
-                </h1>
-            </div>
-            <div class="lg:col-span-4 text-left">
-                <p class="text-lg text-muted-foreground text-pretty max-w-md">
-                    A curated feed of camps, travels, and community gatherings. Filter, browse, and lock in your spot in seconds.
-                </p>
-                <div class="mt-6 flex items-center gap-3">
-                    <div class="flex -space-x-2">
-                        {% for color in ["#4f46e5", "#10b981", "#f59e0b", "#ef4444"] %}
-                        <div class="size-8 rounded-full ring-2 ring-background" style="background-color: {{ color }}"></div>
-                        {% endfor %}
-                    </div>
-                    <span class="text-sm text-muted-foreground">
-                        <span class="text-foreground font-medium">2,400+</span> attendees this season
-                    </span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Controls Bar (Filtered categories + Status Dropdown + Search) -->
-    <section class="max-w-[1400px] mx-auto px-6 lg:px-10">
-        <div class="controls-bar flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between p-3 ring-1 ring-border rounded-2xl">
-            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar" id="category-filters">
-                <button class="filter-btn active px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all" data-category="all">
-                    All Events
-                </button>
-                {% for cat in categories %}
-                <button class="filter-btn px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all text-muted-foreground hover:text-foreground hover:bg-background/50" data-category="{{ cat }}">
-                    {{ cat }}
-                </button>
-                {% endfor %}
-            </div>
-
-            <!-- Right Controls: Status Filter & Search Bar -->
-            <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-                <!-- Status Filter Dropdown -->
-                <div class="relative w-full sm:w-56">
-                    <i data-lucide="filter" class="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none"></i>
-                    <select id="status-filter" class="w-full bg-card ring-1 ring-border rounded-xl pl-10 pr-8 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground cursor-pointer appearance-none">
-                        <option value="all">All Statuses</option>
-                        {% if statuses %}
-                        <optgroup label="Event Status">
-                            {% for st in statuses %}
-                            <option value="{{ st }}">{{ st }}</option>
-                            {% endfor %}
-                        </optgroup>
-                        {% endif %}
-                        <optgroup label="My RSVPs">
-                            <option value="Registered">Registered (My RSVP)</option>
-                            <option value="Pending Approval">Pending Approval</option>
-                            <option value="Pending Transaction">Pending Transaction</option>
-                        </optgroup>
-                    </select>
-                    <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none"></i>
-                </div>
-
-                <!-- Search Bar -->
-                <div class="relative w-full sm:w-64">
-                    <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none"></i>
-                    <input type="text" id="event-search" placeholder="Search events..." class="w-full border-none ring-1 ring-border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground text-foreground"/>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Events Grid / Sections -->
-    <section class="max-w-[1400px] mx-auto px-6 lg:px-10 py-10 lg:py-14">
-        {% if not events %}
-            <div class="py-24 text-center text-muted-foreground">
-                No events currently published.
-            </div>
-        {% else %}
-            
-            {% set featured_event = events[0] %}
-            {% set compact_events = events[1:4] if events | length > 1 else [] %}
-            {% set other_events = events[4:] if events | length > 4 else [] %}
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- Featured Card -->
-                {% if featured_event %}
-                <a href="/{{ featured_event.route }}" 
-                   class="event-card group relative lg:col-span-7 overflow-hidden rounded-3xl ring-1 ring-border bg-card min-h-[420px] flex flex-col justify-end p-8 lg:p-10 hover:ring-primary/50 transition-all cursor-pointer"
-                   data-category="{{ featured_event.event_category }}"
-                   data-status="{{ featured_event.event_status }}"
-                   data-user-status="{{ featured_event.user_status or '' }}"
-                   data-title="{{ featured_event.event_title | lower }}">
-                    <!-- Visual Image -->
-                    <div class="absolute inset-0">
-                        {% if featured_event.event_image %}
-                        <img src="{{ featured_event.event_image }}" alt="{{ featured_event.event_title }}" class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"/>
-                        {% else %}
-                        <div class="absolute inset-0 bg-gray-900 flex items-center justify-center text-gray-500">
-                            <i data-lucide="image-off" class="size-16"></i>
-                        </div>
-                        {% endif %}
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
-                    </div>
-
-                    <!-- Date Badge -->
-                    <div class="absolute top-8 left-8 lg:top-10 lg:left-10 flex flex-col items-center text-white">
-                        <div class="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/90">
-                            {{ frappe.utils.get_datetime(featured_event.start_date).strftime('%b') if featured_event.start_date else "TBA" }}
-                        </div>
-                        <div class="text-7xl lg:text-8xl font-semibold leading-none mt-1 drop-shadow-lg">
-                            {{ frappe.utils.get_datetime(featured_event.start_date).strftime('%d') if featured_event.start_date else "-" }}
-                        </div>
-                        <div class="mt-3 h-px w-10 bg-white/40"></div>
-                        <div class="mt-3 text-xs text-white/80">
-                            {{ frappe.utils.get_datetime(featured_event.start_date).strftime('%I:%M %p') if featured_event.start_date else "TBA" }}
-                        </div>
-                    </div>
-
-                    <!-- Status Chip -->
-                    <div class="absolute top-8 right-8 lg:top-10 lg:right-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur ring-1 ring-white/20 text-xs font-medium text-white">
-                        <span class="size-1.5 rounded-full {{ get_status_dot(featured_event.event_status) }}"></span>
-                        {{ get_status_label(featured_event.event_status) }}
-                    </div>
-
-                    <div class="relative text-white text-left">
-                        <span class="inline-block text-[11px] uppercase tracking-[0.25em] text-white/70 mb-3">
-                            Featured · {{ featured_event.event_category }}
-                        </span>
-                        <h2 class="text-4xl lg:text-6xl font-semibold tracking-tight text-balance mb-4 drop-shadow">
-                            {{ featured_event.event_title }}
-                        </h2>
-                        <p class="text-white/80 max-w-lg text-pretty mb-6">
-                            {{ featured_event.event_description | striptags | truncate(120) }}
-                        </p>
-
-                        <div class="flex flex-wrap items-center gap-4">
-                            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-black font-medium text-sm group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                View event
-                                <i data-lucide="arrow-up-right" class="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"></i>
-                            </div>
-                            {% if featured_event.show_capacity_on_website and featured_event.capacity > 0 %}
-                            <div class="text-sm text-white/85">
-                                <span class="text-white font-medium">
-                                    {{ featured_event.registered_count }}/{{ featured_event.capacity }}
-                                </span> spots filled · {{ featured_event.fill_percentage }}%
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </a>
-                {% endif %}
-
-                <!-- Compact Sidebar Rows -->
-                <div id="compact-container" class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-                    {% for event in compact_events %}
-                    <a href="/{{ event.route }}" 
-                       class="event-card compact-row-card group relative flex items-center gap-4 p-3 rounded-2xl bg-card ring-1 ring-border hover:ring-primary/40 hover:bg-card/80 transition-all cursor-pointer"
-                       data-category="{{ event.event_category }}"
-                       data-status="{{ event.event_status }}"
-                       data-user-status="{{ event.user_status or '' }}"
-                       data-title="{{ event.event_title | lower }}">
-                        <div class="relative shrink-0 w-20 h-20 rounded-xl overflow-hidden ring-1 ring-border bg-gray-900">
-                            {% if event.event_image %}
-                            <img src="{{ event.event_image }}" alt="{{ event.event_title }}" class="absolute inset-0 h-full w-full object-cover"/>
-                            {% else %}
-                            <div class="absolute inset-0 flex items-center justify-center text-gray-600">
-                                <i data-lucide="image" class="size-6"></i>
-                            </div>
-                            {% endif %}
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center text-white">
-                                <div class="text-[9px] uppercase tracking-widest font-semibold">
-                                    {{ frappe.utils.get_datetime(event.start_date).strftime('%b') if event.start_date else "TBA" }}
-                                </div>
-                                <div class="text-xl font-semibold leading-none">
-                                    {{ frappe.utils.get_datetime(event.start_date).strftime('%d') if event.start_date else "-" }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex-1 min-w-0 text-left">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="size-1.5 rounded-full {{ get_status_dot(event.event_status) }}"></span>
-                                <span class="text-[10px] uppercase tracking-widest text-muted-foreground">
-                                    {{ event.event_category }} · {{ get_status_label(event.event_status) }}
-                                </span>
-                            </div>
-                            <h3 class="font-semibold truncate text-card-foreground group-hover:text-primary transition-colors">{{ event.event_title }}</h3>
-                            <div class="text-xs text-muted-foreground mt-0.5">
-                                {{ frappe.utils.get_datetime(event.start_date).strftime('%I:%M %p') if event.start_date else "TBA" }}
-                                {% if event.show_capacity_on_website and event.capacity > 0 %}
-                                · {{ event.registered_count }}/{{ event.capacity }} spots
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="shrink-0 size-9 grid place-items-center rounded-full ring-1 ring-border group-hover:bg-primary group-hover:ring-primary group-hover:text-primary-foreground transition-all">
-                            <i data-lucide="arrow-up-right" class="size-4"></i>
-                        </div>
-                    </a>
+    <!-- Controls Bar: Category Pills, Status Dropdown Filter, Search Bar -->
+    <div class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 py-4 mb-10 transition-all duration-300" id="sticky-header">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                
+                <!-- Category Pills -->
+                <div class="flex gap-2 overflow-x-auto w-full md:w-auto hide-scrollbar" id="category-filters">
+                    <button class="filter-btn active px-6 py-2.5 rounded-full bg-charcoal text-white font-semibold text-sm transition-all hover:scale-105 whitespace-nowrap shadow-sm" data-category="all">
+                        All Events
+                    </button>
+                    {% for cat in categories %}
+                    <button class="filter-btn px-6 py-2.5 rounded-full bg-white text-gray-600 hover:bg-gray-100 hover:text-charcoal border border-gray-200 font-semibold text-sm transition-all hover:scale-105 whitespace-nowrap" data-category="{{ cat }}">
+                        {{ cat }}
+                    </button>
                     {% endfor %}
                 </div>
-
-                <!-- Remaining Event Grid -->
-                <div id="others-container" class="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-                    {% for event in other_events %}
-                    <a href="/{{ event.route }}" 
-                       class="event-card other-event-card group relative flex flex-col bg-card ring-1 ring-border rounded-2xl overflow-hidden hover:ring-primary/40 hover:-translate-y-0.5 transition-all cursor-pointer"
-                       data-category="{{ event.event_category }}"
-                       data-status="{{ event.event_status }}"
-                       data-user-status="{{ event.user_status or '' }}"
-                       data-title="{{ event.event_title | lower }}">
-                        <div class="relative aspect-[16/10] overflow-hidden bg-gray-900">
-                            {% if event.event_image %}
-                            <img src="{{ event.event_image }}" alt="{{ event.event_title }}" class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"/>
-                            {% else %}
-                            <div class="absolute inset-0 flex items-center justify-center text-gray-600">
-                                <i data-lucide="image" class="size-10"></i>
-                            </div>
+                
+                <!-- Search & Status Dropdown -->
+                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    
+                    <!-- Status Filter Dropdown -->
+                    <div class="relative w-full sm:w-56 group">
+                        <select id="status-filter" class="w-full pl-5 pr-10 py-3 appearance-none bg-gray-50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-primary text-charcoal rounded-full outline-none transition-all shadow-inner focus:shadow-md focus:ring-4 focus:ring-primary/10 font-medium cursor-pointer text-sm">
+                            <option value="all">All Statuses</option>
+                            {% if statuses %}
+                            <optgroup label="Event Status">
+                                {% for st in statuses %}
+                                <option value="{{ st }}">{{ st }}</option>
+                                {% endfor %}
+                            </optgroup>
                             {% endif %}
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
-                            
-                            <div class="absolute top-3 left-3 flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-black/50 backdrop-blur ring-1 ring-white/20 text-white">
-                                <div class="text-[9px] uppercase tracking-widest font-semibold">
-                                    {{ frappe.utils.get_datetime(event.start_date).strftime('%b') if event.start_date else "TBA" }}
+                            <optgroup label="My RSVPs">
+                                <option value="Registered">Registered (My RSVP)</option>
+                                <option value="Pending Approval">Pending Approval</option>
+                                <option value="Pending Transaction">Pending Transaction</option>
+                            </optgroup>
+                        </select>
+                        <span class="material-symbols-outlined absolute right-4 top-3 text-gray-400 pointer-events-none group-focus-within:text-primary transition-colors">expand_more</span>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="relative w-full sm:w-72 group">
+                        <span class="material-symbols-outlined absolute left-4 top-3 text-gray-400 group-focus-within:text-primary transition-colors">search</span>
+                        <input type="text" id="event-search" placeholder="Search activities..." class="w-full pl-12 pr-4 py-3 bg-gray-50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-primary text-charcoal rounded-full outline-none transition-all shadow-inner focus:shadow-md focus:ring-4 focus:ring-primary/10 text-sm">
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="events-grid">
+            
+            {% for event in events %}
+            <div class="event-card group relative flex flex-col bg-white rounded-[2rem] card-shadow hover:card-shadow-hover transition-all duration-500 hover:-translate-y-2 overflow-hidden animate-fade-in-up" 
+                 data-category="{{ event.event_category }}" 
+                 data-status="{{ event.event_status }}"
+                 data-user-status="{{ event.user_status or '' }}"
+                 data-title="{{ event.event_title | lower }}"
+                 style="animation-delay: {{ loop.index0 * 0.08 }}s; opacity: 0;">
+                
+                <!-- Date Badge -->
+                <div class="absolute top-5 left-5 z-20 flex flex-col items-center justify-center w-14 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg overflow-hidden text-center group-hover:scale-110 transition-transform duration-500 origin-top-left">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-white bg-red-500 w-full py-1.5">
+                        {{ frappe.utils.get_datetime(event.start_date).strftime('%b') if event.start_date else "TBA" }}
+                    </span>
+                    <span class="text-xl font-black text-charcoal py-2">
+                        {{ frappe.utils.get_datetime(event.start_date).strftime('%d') if event.start_date else "-" }}
+                    </span>
+                </div>
+
+                <!-- Category Tag -->
+                <div class="absolute top-5 right-5 z-20 bg-black/40 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full">
+                    {{ event.event_category }}
+                </div>
+
+                <!-- Event Image -->
+                <div class="relative aspect-[4/3] bg-gray-100 overflow-hidden rounded-t-[2rem]">
+                    {% if event.event_image %}
+                        <img src="{{ event.event_image }}" alt="{{ event.event_title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-gray-300">
+                            <span class="material-symbols-outlined text-6xl">interests</span>
+                        </div>
+                    {% endif %}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                </div>
+
+                <!-- Card Content -->
+                <div class="p-6 flex flex-col flex-grow">
+                    
+                    <div class="mb-4 flex flex-wrap gap-2 items-center justify-between">
+                        
+                        <!-- Event Status -->
+                        <div>
+                            {% if event.event_status == 'Open for Registration' %}
+                                <div class="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-100">
+                                    <span class="relative flex h-2 w-2">
+                                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                      <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                    </span>
+                                    <span class="text-[11px] font-extrabold text-green-700 uppercase tracking-wider">Open Now</span>
                                 </div>
-                                <div class="text-lg font-semibold leading-none mt-0.5">
-                                    {{ frappe.utils.get_datetime(event.start_date).strftime('%d') if event.start_date else "-" }}
+                            {% elif event.event_status == 'Sold Out' %}
+                                <div class="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-full border border-red-100">
+                                    <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                                    <span class="text-[11px] font-extrabold text-red-700 uppercase tracking-wider">Sold Out</span>
                                 </div>
-                            </div>
-                            <div class="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur ring-1 ring-white/20 text-[10px] font-medium text-white">
-                                <span class="size-1.5 rounded-full {{ get_status_dot(event.event_status) }}"></span>
-                                {{ get_status_label(event.event_status) }}
-                            </div>
+                            {% else %}
+                                <div class="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
+                                    <span class="h-2 w-2 rounded-full bg-gray-400"></span>
+                                    <span class="text-[11px] font-extrabold text-gray-600 uppercase tracking-wider">{{ event.event_status }}</span>
+                                </div>
+                            {% endif %}
                         </div>
 
-                        <div class="p-5 flex flex-col flex-1 text-left">
-                            <div class="flex items-start justify-between mb-3">
-                                <div class="text-[10px] uppercase tracking-widest text-muted-foreground">
-                                    {{ event.event_category }}
-                                </div>
-                                <div class="size-8 grid place-items-center rounded-full ring-1 ring-border group-hover:bg-primary group-hover:ring-primary group-hover:text-primary-foreground transition-all">
-                                    <i data-lucide="arrow-up-right" class="size-3.5"></i>
-                                </div>
-                            </div>
-                            <h3 class="text-xl font-semibold mb-2 group-hover:text-primary transition-colors text-card-foreground">{{ event.event_title }}</h3>
-                            <div class="flex items-center gap-2 text-sm text-muted-foreground mb-5">
-                                <i data-lucide="calendar" class="size-3.5"></i>
-                                {{ frappe.utils.get_datetime(event.start_date).strftime('%I:%M %p') if event.start_date else "TBA" }}
-                            </div>
+                        <!-- User RSVP Status -->
+                        {% if event.user_status %}
+                            {% if event.user_status == 'Registered' %}
+                                <span class="text-primary font-bold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">verified</span> Going</span>
+                            {% elif event.user_status == 'Pending Approval' %}
+                                <span class="text-yellow-600 font-bold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">schedule</span> Pending</span>
+                            {% elif event.user_status == 'Pending Transaction' %}
+                                <span class="text-orange-600 font-bold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">payments</span> Awaiting Payment</span>
+                            {% elif event.user_status == 'Rejected' %}
+                                <span class="text-red-500 font-bold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">cancel</span> Declined</span>
+                            {% elif event.user_status == 'Canceled' %}
+                                <span class="text-gray-400 font-bold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">do_not_disturb_on</span> Canceled</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
 
-                            {% if event.show_capacity_on_website %}
-                            <div class="mt-auto">
-                                <div class="flex items-center justify-between text-[11px] mb-1.5">
-                                    <span class="text-muted-foreground">Spots filled</span>
-                                    <span class="font-medium text-card-foreground">
+                    <!-- Title Link -->
+                    <a href="/{{ event.route }}" class="outline-none before:absolute before:inset-0 z-10">
+                        <h3 class="text-2xl font-black text-charcoal leading-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">{{ event.event_title }}</h3>
+                    </a>
+                    
+                    <p class="text-gray-500 text-sm mb-6 flex items-center gap-1.5 font-medium">
+                        <span class="material-symbols-outlined text-[18px]">schedule</span>
+                        {{ frappe.utils.get_datetime(event.start_date).strftime('%I:%M %p') if event.start_date else "TBA" }}
+                    </p>
+
+                    <!-- Footer: Capacity & Arrow -->
+                    <div class="mt-auto pt-5 border-t border-gray-100 flex items-center justify-between relative z-20">
+                        
+                        {% if event.show_capacity_on_website %}
+                            {% if event.capacity > 0 %}
+                            <div class="w-full max-w-[120px]">
+                                <div class="flex justify-between items-center text-xs mb-1.5 font-bold">
+                                    <span class="text-gray-400">Spots</span>
+                                    <span class="{% if event.fill_percentage >= 90 %}text-red-500{% else %}text-charcoal{% endif %}">
                                         {{ event.registered_count }}/{{ event.capacity }}
                                     </span>
                                 </div>
-                                <div class="h-1 bg-background rounded-full overflow-hidden">
-                                    <div class="h-full bg-primary transition-all" style="width: {{ event.fill_percentage }}%"></div>
+                                <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                    <div class="h-full rounded-full transition-all duration-1000 ease-out {% if event.fill_percentage >= 90 %}bg-red-500{% elif event.fill_percentage >= 75 %}bg-orange-500{% else %}bg-primary{% endif %}" style="width: {{ event.fill_percentage }}%"></div>
                                 </div>
                             </div>
+                            {% else %}
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Unlimited Spots</span>
                             {% endif %}
+                        {% else %}
+                            <div></div>
+                        {% endif %}
+
+                        <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-primary text-charcoal group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-primary/30 group-hover:rotate-[45deg]">
+                            <span class="material-symbols-outlined transition-transform duration-300">arrow_upward</span>
                         </div>
-                    </a>
-                    {% endfor %}
+
+                    </div>
                 </div>
             </div>
+            {% endfor %}
 
-            <!-- No Results Message -->
-            <div id="no-results-msg" class="hidden text-center py-24">
-                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-card ring-1 ring-border mb-6 text-muted-foreground">
-                    <i data-lucide="search-code" class="size-10"></i>
-                </div>
-                <h3 class="text-2xl font-semibold text-foreground mb-2">No matching events</h3>
-                <p class="text-muted-foreground text-lg">We couldn't find anything matching your search. Try different keywords.</p>
-            </div>
-            
-        {% endif %}
-    </section>
-
-    <!-- Footer -->
-    <footer class="max-w-[1400px] mx-auto px-6 lg:px-10 py-10 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-        <div>© 2026 Evently. Made for gatherings that matter.</div>
-        <div class="flex gap-6">
-            <a href="#" class="hover:text-foreground">Terms</a>
-            <a href="#" class="hover:text-foreground">Privacy</a>
-            <a href="#" class="hover:text-foreground">Contact</a>
         </div>
-    </footer>
+        
+        <!-- Empty State -->
+        <div id="no-results-msg" class="hidden text-center py-24">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-6 text-gray-400">
+                <span class="material-symbols-outlined text-4xl">search_off</span>
+            </div>
+            <h3 class="text-2xl font-black text-charcoal mb-2">No matching events</h3>
+            <p class="text-gray-500 text-lg">We couldn't find anything matching your search. Try different keywords.</p>
+        </div>
 
-    <!-- Interactive Search / Filter JS -->
+    </div>
+
+    <!-- JavaScript Filtering & Scroll Logic -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Lucide Icon activation
-            if (window.lucide) {
-                window.lucide.createIcons();
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            // Header Scroll Shadow
+            const header = document.getElementById('sticky-header');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 10) {
+                    header.classList.add('shadow-sm');
+                } else {
+                    header.classList.remove('shadow-sm');
+                }
+            });
 
-            // Theme Toggle Logic
-            const toggleBtn = document.getElementById('theme-toggle');
-            if (toggleBtn) {
-                toggleBtn.addEventListener('click', () => {
-                    const isDark = document.documentElement.classList.contains('dark');
-                    const next = isDark ? 'light' : 'dark';
-                    document.documentElement.classList.remove('dark', 'light');
-                    document.documentElement.classList.add(next);
-                    localStorage.setItem('evently-theme', next);
-                });
-            }
-
-            // Search and Filter Elements
+            // Search and Filter Logic
             const searchInput = document.getElementById('event-search');
             const statusFilter = document.getElementById('status-filter');
             const filterBtns = document.querySelectorAll('.filter-btn');
@@ -564,8 +267,6 @@
             function filterEvents() {
                 const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
                 let visibleCount = 0;
-                let visibleCompact = 0;
-                let visibleOthers = 0;
 
                 eventCards.forEach(card => {
                     const title = card.getAttribute('data-title') || '';
@@ -575,6 +276,8 @@
                     
                     const matchesSearch = title.includes(searchTerm);
                     const matchesCategory = (activeCategory === 'all' || category === activeCategory);
+                    
+                    // Hide Completed events by default when 'All Statuses' is selected unless explicitly filtered
                     const matchesStatus = (
                         activeStatus === 'all'
                             ? (eventStatus !== 'Completed')
@@ -582,28 +285,15 @@
                     );
 
                     if (matchesSearch && matchesCategory && matchesStatus) {
-                        card.style.setProperty('display', '', 'important');
+                        card.style.display = 'flex';
+                        card.style.animation = 'none';
+                        card.offsetHeight; /* trigger reflow */
+                        card.style.animation = null; 
                         visibleCount++;
-                        if (card.classList.contains('compact-row-card')) {
-                            visibleCompact++;
-                        } else if (card.classList.contains('other-event-card')) {
-                            visibleOthers++;
-                        }
                     } else {
-                        card.style.setProperty('display', 'none', 'important');
+                        card.style.display = 'none';
                     }
                 });
-
-                // Hide/show the parent wrappers of compact and other cards if they contain no visible items
-                const compactContainer = document.getElementById('compact-container');
-                if (compactContainer) {
-                    compactContainer.style.display = (visibleCompact > 0) ? 'grid' : 'none';
-                }
-
-                const othersContainer = document.getElementById('others-container');
-                if (othersContainer) {
-                    othersContainer.style.display = (visibleOthers > 0) ? 'grid' : 'none';
-                }
 
                 if (visibleCount === 0 && eventCards.length > 0) {
                     noResultsMsg.classList.remove('hidden');
@@ -612,9 +302,8 @@
                 }
             }
 
-            if (searchInput) {
-                searchInput.addEventListener('input', filterEvents);
-            }
+            // Listeners
+            if (searchInput) searchInput.addEventListener('input', filterEvents);
 
             if (statusFilter) {
                 statusFilter.addEventListener('change', (e) => {
@@ -625,22 +314,23 @@
 
             filterBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
-                    // Reset all buttons
                     filterBtns.forEach(b => {
-                        b.classList.remove('active');
+                        b.classList.remove('bg-charcoal', 'text-white', 'shadow-sm');
+                        b.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
                     });
                     
-                    // Style active button
-                    btn.classList.add('active');
+                    btn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
+                    btn.classList.add('bg-charcoal', 'text-white', 'shadow-sm');
 
                     activeCategory = btn.getAttribute('data-category');
                     filterEvents();
                 });
             });
 
-            // Run initial filtering on page load to hide completed events from 'All Events' view
+            // Initial filtering on page load to hide completed events from default view
             filterEvents();
         });
     </script>
-</div>
+</body>
+</html>
 {% endblock %}
