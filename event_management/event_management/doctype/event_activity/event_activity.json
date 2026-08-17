@@ -26,6 +26,8 @@
   "route",
   "section_break_qvjt",
   "custom_fields",
+  "photo_gallery_section",
+  "gallery_images",
   "pricing_and_payment_section",
   "column_break_ibpw",
   "is_paid",
@@ -138,6 +140,17 @@
    "fieldtype": "Table",
    "label": "Custom Questions",
    "options": "Event Custom Field"
+  },
+  {
+   "fieldname": "photo_gallery_section",
+   "fieldtype": "Section Break",
+   "label": "Photo Gallery"
+  },
+  {
+   "fieldname": "gallery_images",
+   "fieldtype": "Table",
+   "label": "Gallery Photos",
+   "options": "Event Photo"
   },
   {
    "fieldname": "approval_instructions_section",
