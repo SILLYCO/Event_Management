@@ -8,6 +8,7 @@
  "field_order": [
   "registered_event_section",
   "event_activity",
+  "event_is_paid",
   "column_break_ysdt",
   "user",
   "attendee_details_section",
@@ -17,7 +18,19 @@
   "email",
   "date",
   "section_break_hene",
-  "status"
+  "status",
+  "rejection_reason",
+  "payment_details_section",
+  "event_price",
+  "promo_code",
+  "final_price",
+  "column_break_jelh",
+  "payment_method",
+  "column_break_btes",
+  "paid_amount",
+  "remaining_amount",
+  "section_break_lhqb",
+  "custom_answers"
  ],
  "fields": [
   {
@@ -85,14 +98,90 @@
    "default": "Pending Approval",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
-   "options": "Pending Approval\nRegistered\nRejected\nCanceled"
+   "options": "Pending Approval\nPending Transaction\nRegistered\nRejected\nCanceled"
+  },
+  {
+   "fieldname": "section_break_lhqb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "custom_answers",
+   "fieldtype": "Code",
+   "label": "Custom Answers",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.status == \"Rejected\"",
+   "fieldname": "rejection_reason",
+   "fieldtype": "Small Text",
+   "label": "Reason for Rejection"
+  },
+  {
+   "fetch_from": "event_activity.is_paid",
+   "fieldname": "event_is_paid",
+   "fieldtype": "Read Only",
+   "hidden": 1,
+   "label": "Event Is Paid "
+  },
+  {
+   "depends_on": "eval:doc.event_is_paid == \"Paid\" && doc.status != \"Pending Approval\"",
+   "fieldname": "payment_details_section",
+   "fieldtype": "Section Break",
+   "label": "Payment Details"
+  },
+  {
+   "fetch_from": "event_activity.ticket_price",
+   "fieldname": "event_price",
+   "fieldtype": "Currency",
+   "label": "Event Price",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_jelh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_method",
+   "fieldtype": "Select",
+   "label": "Payment Method",
+   "options": "\nCash\nInstapay\nVodafone Cash\nOrange Cash\nEtisalat Money"
+  },
+  {
+   "fieldname": "column_break_btes",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Enter the exact amount the user has transferred/paid",
+   "fieldname": "paid_amount",
+   "fieldtype": "Currency",
+   "label": "Paid Amount"
+  },
+  {
+   "fieldname": "remaining_amount",
+   "fieldtype": "Currency",
+   "label": "Remaining Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "promo_code",
+   "fieldtype": "Link",
+   "label": "Promo Code",
+   "options": "Event Promo Code"
+  },
+  {
+   "fieldname": "final_price",
+   "fieldtype": "Currency",
+   "label": "Final Price",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-13 08:23:05.714717",
+ "modified": "2026-07-12 05:42:27.029768",
  "modified_by": "Administrator",
  "module": "Event Management",
  "name": "Event Attendee",
@@ -113,7 +202,7 @@
   }
  ],
  "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
+ "sort_field": "creation",
+ "sort_order": "ASC",
  "states": []
 }

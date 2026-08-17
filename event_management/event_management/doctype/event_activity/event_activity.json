@@ -18,10 +18,23 @@
   "end_date",
   "column_break_jiaw",
   "capacity",
+  "show_capacity_on_website",
+  "registered_count",
   "event_image",
   "section_break_njqc",
   "event_description",
-  "route"
+  "route",
+  "section_break_qvjt",
+  "custom_fields",
+  "pricing_and_payment_section",
+  "column_break_ibpw",
+  "is_paid",
+  "column_break_kefo",
+  "ticket_price",
+  "payment_instructions",
+  "approval_instructions_section",
+  "attendee_instructions",
+  "attendee_attachment"
  ],
  "fields": [
   {
@@ -68,6 +81,7 @@
    "reqd": 1
   },
   {
+   "description": "Set to 0 for unlimited capacity",
    "fieldname": "capacity",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -114,6 +128,78 @@
    "fieldname": "registration_start_date",
    "fieldtype": "Datetime",
    "label": "Registration Start Date"
+  },
+  {
+   "fieldname": "section_break_qvjt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "custom_fields",
+   "fieldtype": "Table",
+   "label": "Custom Questions",
+   "options": "Event Custom Field"
+  },
+  {
+   "fieldname": "approval_instructions_section",
+   "fieldtype": "Section Break",
+   "label": "Approval Instructions"
+  },
+  {
+   "fieldname": "attendee_instructions",
+   "fieldtype": "Text Editor",
+   "label": "Attendee Instructions"
+  },
+  {
+   "fieldname": "attendee_attachment",
+   "fieldtype": "Attach",
+   "label": "Attendee Attachment"
+  },
+  {
+   "fieldname": "pricing_and_payment_section",
+   "fieldtype": "Section Break",
+   "label": "Pricing and Payment"
+  },
+  {
+   "depends_on": "eval:doc.is_paid == \"Paid\"",
+   "fieldname": "column_break_ibpw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Free",
+   "fieldname": "is_paid",
+   "fieldtype": "Select",
+   "label": "Event Type",
+   "options": "Free\nPaid"
+  },
+  {
+   "fieldname": "column_break_kefo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.is_paid == \"Paid\"",
+   "fieldname": "ticket_price",
+   "fieldtype": "Currency",
+   "label": "Ticket Price"
+  },
+  {
+   "depends_on": "eval:doc.is_paid == \"Paid\"",
+   "fieldname": "payment_instructions",
+   "fieldtype": "Text Editor",
+   "label": "Payment Instructions"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_capacity_on_website",
+   "fieldtype": "Check",
+   "label": "Show Capacity on Website"
+  },
+  {
+   "default": "0",
+   "fieldname": "registered_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Registered Count",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
@@ -121,7 +207,7 @@
  "index_web_pages_for_search": 1,
  "is_published_field": "published",
  "links": [],
- "modified": "2026-02-17 04:38:59.106753",
+ "modified": "2026-07-12 03:52:54.601003",
  "modified_by": "Administrator",
  "module": "Event Management",
  "name": "Event Activity",

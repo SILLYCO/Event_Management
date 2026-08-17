@@ -1,0 +1,339 @@
+{% extends "templates/web.html" %}
+
+{% block footer %}{% endblock %}
+{% block page_footer %}{% endblock %}
+
+{% block page_content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { "primary": "#137fec", "charcoal": "#0f172a", "soft-bg": "#f8fafc" },
+                    fontFamily: { "display": ["Inter", "sans-serif"] },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); }
+        .card-shadow-hover { box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08); }
+    </style>
+</head>
+<body class="bg-soft-bg min-h-screen font-display pb-20 selection:bg-primary selection:text-white">
+
+    <!-- Hero Header -->
+    <div class="relative bg-white overflow-hidden border-b border-gray-100">
+        <div class="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px] opacity-40"></div>
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-primary text-sm font-bold mb-6 tracking-wide uppercase">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
+                Discover Experiences
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-black text-charcoal tracking-tight mb-6">Explore Upcoming Events</h1>
+            <p class="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto">Find your next adventure, scout camp, or community gathering. Secure your spot today.</p>
+        </div>
+    </div>
+
+    <!-- Controls Bar: Category Pills, Status Dropdown Filter, Search Bar -->
+    <div class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 py-4 mb-10 transition-all duration-300" id="sticky-header">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                
+                <!-- Category Pills -->
+                <div class="flex gap-2 overflow-x-auto w-full md:w-auto hide-scrollbar" id="category-filters">
+                    <button class="filter-btn active px-6 py-2.5 rounded-full bg-charcoal text-white font-semibold text-sm transition-all hover:scale-105 whitespace-nowrap shadow-sm" data-category="all">
+                        All Events
+                    </button>
+                    {% for cat in categories %}
+                    <button class="filter-btn px-6 py-2.5 rounded-full bg-white text-gray-600 hover:bg-gray-100 hover:text-charcoal border border-gray-200 font-semibold text-sm transition-all hover:scale-105 whitespace-nowrap" data-category="{{ cat }}">
+                        {{ cat }}
+                    </button>
+                    {% endfor %}
+                </div>
+                
+                <!-- Search & Status Dropdown -->
+                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    
+                    <!-- Status Filter Dropdown -->
+                    <div class="relative w-full sm:w-56 group">
+                        <select id="status-filter" class="w-full pl-5 pr-10 py-3 appearance-none bg-gray-50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-primary text-charcoal rounded-full outline-none transition-all shadow-inner focus:shadow-md focus:ring-4 focus:ring-primary/10 font-medium cursor-pointer text-sm">
+                            <option value="all">All Statuses</option>
+                            {% if statuses %}
+                            <optgroup label="Event Status">
+                                {% for st in statuses %}
+                                <option value="{{ st }}">{{ st }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endif %}
+                            <optgroup label="My RSVPs">
+                                <option value="Registered">Registered (My RSVP)</option>
+                                <option value="Pending Approval">Pending Approval</option>
+                                <option value="Pending Transaction">Pending Transaction</option>
+                            </optgroup>
+                        </select>
+                        <span class="material-symbols-outlined absolute right-4 top-3 text-gray-400 pointer-events-none group-focus-within:text-primary transition-colors">expand_more</span>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="relative w-full sm:w-72 group">
+                        <span class="material-symbols-outlined absolute left-4 top-3 text-gray-400 group-focus-within:text-primary transition-colors">search</span>
+                        <input type="text" id="event-search" placeholder="Search activities..." class="w-full pl-12 pr-4 py-3 bg-gray-50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-primary text-charcoal rounded-full outline-none transition-all shadow-inner focus:shadow-md focus:ring-4 focus:ring-primary/10 text-sm">
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="events-grid">
+            
+            {% for event in events %}
+            <div class="event-card group relative flex flex-col bg-white rounded-[2rem] card-shadow hover:card-shadow-hover transition-all duration-500 hover:-translate-y-2 overflow-hidden animate-fade-in-up" 
+                 data-category="{{ event.event_category }}" 
+                 data-status="{{ event.event_status }}"
+                 data-user-status="{{ event.user_status or '' }}"
+                 data-title="{{ event.event_title | lower }}"
+                 style="animation-delay: {{ loop.index0 * 0.08 }}s; opacity: 0;">
+                
+                <!-- Date Badge -->
+                <div class="absolute top-5 left-5 z-20 flex flex-col items-center justify-center w-14 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg overflow-hidden text-center group-hover:scale-110 transition-transform duration-500 origin-top-left">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-white bg-red-500 w-full py-1.5">
+                        {{ frappe.utils.get_datetime(event.start_date).strftime('%b') if event.start_date else "TBA" }}
+                    </span>
+                    <span class="text-xl font-black text-charcoal py-2">
+                        {{ frappe.utils.get_datetime(event.start_date).strftime('%d') if event.start_date else "-" }}
+                    </span>
+                </div>
+
+                <!-- Category Tag -->
+                <div class="absolute top-5 right-5 z-20 bg-black/40 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full">
+                    {{ event.event_category }}
+                </div>
+
+                <!-- Event Image -->
+                <div class="relative aspect-[4/3] bg-gray-100 overflow-hidden rounded-t-[2rem]">
+                    {% if event.event_image %}
+                        <img src="{{ event.event_image }}" alt="{{ event.event_title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-gray-300">
+                            <span class="material-symbols-outlined text-6xl">interests</span>
+                        </div>
+                    {% endif %}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                </div>
+
+                <!-- Card Content -->
+                <div class="p-6 flex flex-col flex-grow">
+                    
+                    <div class="mb-4 flex flex-wrap gap-2 items-center justify-between">
+                        
+                        <!-- Event Status -->
+                        <div>
+                            {% if event.event_status == 'Open for Registration' %}
+                                <div class="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-100">
+                                    <span class="relative flex h-2 w-2">
+                                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                      <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                    </span>
+                                    <span class="text-[11px] font-extrabold text-green-700 uppercase tracking-wider">Open Now</span>
+                                </div>
+                            {% elif event.event_status == 'Sold Out' %}
+                                <div class="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-full border border-red-100">
+                                    <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                                    <span class="text-[11px] font-extrabold text-red-700 uppercase tracking-wider">Sold Out</span>
+                                </div>
+                            {% else %}
+                                <div class="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
+                                    <span class="h-2 w-2 rounded-full bg-gray-400"></span>
+                                    <span class="text-[11px] font-extrabold text-gray-600 uppercase tracking-wider">{{ event.event_status }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- User RSVP Status -->
+                        {% if event.user_status %}
+                            {% if event.user_status == 'Registered' %}
+                                <span class="text-primary font-bold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">verified</span> Going</span>
+                            {% elif event.user_status == 'Pending Approval' %}
+                                <span class="text-yellow-600 font-bold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">schedule</span> Pending</span>
+                            {% elif event.user_status == 'Pending Transaction' %}
+                                <span class="text-orange-600 font-bold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">payments</span> Awaiting Payment</span>
+                            {% elif event.user_status == 'Rejected' %}
+                                <span class="text-red-500 font-bold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">cancel</span> Declined</span>
+                            {% elif event.user_status == 'Canceled' %}
+                                <span class="text-gray-400 font-bold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">do_not_disturb_on</span> Canceled</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Title Link -->
+                    <a href="/{{ event.route }}" class="outline-none before:absolute before:inset-0 z-10">
+                        <h3 class="text-2xl font-black text-charcoal leading-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">{{ event.event_title }}</h3>
+                    </a>
+                    
+                    <p class="text-gray-500 text-sm mb-6 flex items-center gap-1.5 font-medium">
+                        <span class="material-symbols-outlined text-[18px]">schedule</span>
+                        {{ frappe.utils.get_datetime(event.start_date).strftime('%I:%M %p') if event.start_date else "TBA" }}
+                    </p>
+
+                    <!-- Footer: Capacity & Arrow -->
+                    <div class="mt-auto pt-5 border-t border-gray-100 flex items-center justify-between relative z-20">
+                        
+                        {% if event.show_capacity_on_website %}
+                            {% if event.capacity > 0 %}
+                            <div class="w-full max-w-[120px]">
+                                <div class="flex justify-between items-center text-xs mb-1.5 font-bold">
+                                    <span class="text-gray-400">Spots</span>
+                                    <span class="{% if event.fill_percentage >= 90 %}text-red-500{% else %}text-charcoal{% endif %}">
+                                        {{ event.registered_count }}/{{ event.capacity }}
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                    <div class="h-full rounded-full transition-all duration-1000 ease-out {% if event.fill_percentage >= 90 %}bg-red-500{% elif event.fill_percentage >= 75 %}bg-orange-500{% else %}bg-primary{% endif %}" style="width: {{ event.fill_percentage }}%"></div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Unlimited Spots</span>
+                            {% endif %}
+                        {% else %}
+                            <div></div>
+                        {% endif %}
+
+                        <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-primary text-charcoal group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-primary/30 group-hover:rotate-[45deg]">
+                            <span class="material-symbols-outlined transition-transform duration-300">arrow_upward</span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+        
+        <!-- Empty State -->
+        <div id="no-results-msg" class="hidden text-center py-24">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-6 text-gray-400">
+                <span class="material-symbols-outlined text-4xl">search_off</span>
+            </div>
+            <h3 class="text-2xl font-black text-charcoal mb-2">No matching events</h3>
+            <p class="text-gray-500 text-lg">We couldn't find anything matching your search. Try different keywords.</p>
+        </div>
+
+    </div>
+
+    <!-- JavaScript Filtering & Scroll Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Header Scroll Shadow
+            const header = document.getElementById('sticky-header');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 10) {
+                    header.classList.add('shadow-sm');
+                } else {
+                    header.classList.remove('shadow-sm');
+                }
+            });
+
+            // Search and Filter Logic
+            const searchInput = document.getElementById('event-search');
+            const statusFilter = document.getElementById('status-filter');
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const eventCards = document.querySelectorAll('.event-card');
+            const noResultsMsg = document.getElementById('no-results-msg');
+            
+            let activeCategory = 'all';
+            let activeStatus = 'all';
+
+            function filterEvents() {
+                const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                let visibleCount = 0;
+
+                eventCards.forEach(card => {
+                    const title = card.getAttribute('data-title') || '';
+                    const category = card.getAttribute('data-category') || '';
+                    const eventStatus = card.getAttribute('data-status') || '';
+                    const userStatus = card.getAttribute('data-user-status') || '';
+                    
+                    const matchesSearch = title.includes(searchTerm);
+                    const matchesCategory = (activeCategory === 'all' || category === activeCategory);
+                    
+                    // Hide Completed events by default when 'All Statuses' is selected unless explicitly filtered
+                    const matchesStatus = (
+                        activeStatus === 'all'
+                            ? (eventStatus !== 'Completed')
+                            : (eventStatus === activeStatus || userStatus === activeStatus)
+                    );
+
+                    if (matchesSearch && matchesCategory && matchesStatus) {
+                        card.style.display = 'flex';
+                        card.style.animation = 'none';
+                        card.offsetHeight; /* trigger reflow */
+                        card.style.animation = null; 
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                if (visibleCount === 0 && eventCards.length > 0) {
+                    noResultsMsg.classList.remove('hidden');
+                } else {
+                    noResultsMsg.classList.add('hidden');
+                }
+            }
+
+            // Listeners
+            if (searchInput) searchInput.addEventListener('input', filterEvents);
+
+            if (statusFilter) {
+                statusFilter.addEventListener('change', (e) => {
+                    activeStatus = e.target.value;
+                    filterEvents();
+                });
+            }
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => {
+                        b.classList.remove('bg-charcoal', 'text-white', 'shadow-sm');
+                        b.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
+                    });
+                    
+                    btn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
+                    btn.classList.add('bg-charcoal', 'text-white', 'shadow-sm');
+
+                    activeCategory = btn.getAttribute('data-category');
+                    filterEvents();
+                });
+            });
+
+            // Initial filtering on page load to hide completed events from default view
+            filterEvents();
+        });
+    </script>
+</body>
+</html>
+{% endblock %}

@@ -7,6 +7,28 @@ from frappe.utils import get_datetime, now_datetime
 
 class EventActivity(WebsiteGenerator):
     
+    def get_context(self, context):
+        """
+        Runs before the web page renders.
+        """
+        # --- NEW: Kick out guests with a notification ---
+        if frappe.session.user == "Guest":
+            frappe.msgprint("You have to log in first to view this event.", alert=True)
+            
+            # self.route ensures they are redirected back to the exact event they clicked
+            frappe.local.flags.redirect_location = f"/login?redirect-to=/{self.route}"
+            raise frappe.Redirect
+        # ------------------------------------------------
+
+        # On-the-fly status refresh when viewing detail page
+        old_status = self.event_status
+        self.update_status()
+        if self.event_status != old_status:
+            self.db_set("event_status", self.event_status, update_modified=False)
+
+        context.no_footer = 1
+        context.hide_footer = 1
+
     def validate(self):
         """
         Run checks before saving the Event.
@@ -36,23 +58,31 @@ class EventActivity(WebsiteGenerator):
         Checks time, capacity, and registration start date to set status automatically.
         Priority: Completed > Sold Out > Opening Soon > Open
         """
+        # --- THE FIX: Guard clause to protect manual overrides ---
+        if self.event_status == "Cancelled":
+            return
+        
         now = now_datetime()
+        
+        # --- UPDATE REGISTERED COUNT ---
+        # We count this regardless of capacity limits so the admin always sees the live number.
+        self.registered_count = frappe.db.count("Event Attendee", {
+            "event_activity": self.name, 
+            "status": "Registered"
+        })
 
         # 1. Check if Event is Completed (Time-based - Highest Priority)
-        if self.end_date and get_datetime(self.end_date) < now:
+        # Effective end date: end_date if provided, otherwise start_date
+        effective_end = self.end_date or self.start_date
+        if effective_end and get_datetime(effective_end) < now:
             self.event_status = "Completed"
             return 
 
         # 2. Check Capacity (Sold Out - High Priority)
-        if self.capacity > 0:
-            confirmed_attendees = frappe.db.count("Event Attendee", {
-                "event_activity": self.name, 
-                "status": "Registered"
-            })
-
-            if confirmed_attendees >= self.capacity:
-                self.event_status = "Sold Out"
-                return # Stop here if full
+        # Only enforces "Sold Out" if capacity is greater than 0
+        if self.capacity > 0 and self.registered_count >= self.capacity:
+            self.event_status = "Sold Out"
+            return # Stop here if full
 
         # 3. Check Registration Start Date (Opening Soon vs Open)
         if self.registration_start_date:
@@ -65,7 +95,6 @@ class EventActivity(WebsiteGenerator):
         
         else:
             # Fallback: If no start date is set, assume it is open immediately
-            # (unless it was already set to something else manually, but we enforce Open here)
             if self.event_status != "Sold Out":
                 self.event_status = "Open for Registration"
 
@@ -76,9 +105,9 @@ def update_all_event_statuses():
     Scheduled job to update statuses for all non-completed events.
     Add this to your hooks.py under scheduler_events.
     """
-    # Fetch all events that are NOT completed
+    # THE FIX: Exclude both 'Completed' and 'Cancelled' from the daily check
     events = frappe.get_all("Event Activity", 
-        filters={"event_status": ["!=", "Completed"]}, 
+        filters={"event_status": ["not in", ["Completed", "Cancelled"]]}, 
         fields=["name"]
     )
 

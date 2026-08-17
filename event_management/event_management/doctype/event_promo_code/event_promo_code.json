@@ -1,0 +1,103 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "prompt",
+ "creation": "2026-03-15 13:11:08.086880",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "discount_percentage",
+  "promo_type",
+  "usage_limit",
+  "times_used",
+  "column_break_ezeq",
+  "active",
+  "target_event",
+  "target_category"
+ ],
+ "fields": [
+  {
+   "fieldname": "discount_percentage",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Discount Percentage",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ezeq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active"
+  },
+  {
+   "default": "Global",
+   "fieldname": "promo_type",
+   "fieldtype": "Select",
+   "label": "Promo Type",
+   "options": "Global\nEvent Specific\nCategory Specific",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Leave as 0 for unlimited uses",
+   "fieldname": "usage_limit",
+   "fieldtype": "Int",
+   "label": "Usage Limit",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "times_used",
+   "fieldtype": "Int",
+   "label": "Times Used",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.promo_type == 'Event Specific'",
+   "fieldname": "target_event",
+   "fieldtype": "Link",
+   "label": "Target Event",
+   "mandatory_depends_on": "eval:doc.promo_type == 'Event Specific'",
+   "options": "Event Activity"
+  },
+  {
+   "depends_on": "eval:doc.promo_type == 'Category Specific'",
+   "fieldname": "target_category",
+   "fieldtype": "Link",
+   "label": "Target Category",
+   "mandatory_depends_on": "eval:doc.promo_type == 'Category Specific'",
+   "options": "Event Category"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-11 06:47:35.714060",
+ "modified_by": "Administrator",
+ "module": "Event Management",
+ "name": "Event Promo Code",
+ "naming_rule": "Set by user",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
