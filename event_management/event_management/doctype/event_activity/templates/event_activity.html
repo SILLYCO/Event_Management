@@ -1,5 +1,8 @@
 {% extends "templates/web.html" %}
 
+{% block footer %}{% endblock %}
+{% block page_footer %}{% endblock %}
+
 {% block page_content %}
 <!DOCTYPE html>
 <html class="light" lang="en">
@@ -43,9 +46,11 @@
 {% set attendee_name = "" %}
 {% set rejection_reason = "" %}
 {% set my_final_price = doc.ticket_price %}
+{% set my_paid_amount = 0.0 %}
+{% set my_remaining_amount = doc.ticket_price %}
 
 {% if frappe.session.user != 'Guest' %}
-    {% set attendee = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, ["name", "status", "rejection_reason", "final_price"], as_dict=True) %}
+    {% set attendee = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, ["name", "status", "rejection_reason", "final_price", "paid_amount", "remaining_amount"], as_dict=True) %}
     
     {% if attendee %}
         {% set my_rsvp = attendee.status %}
@@ -54,6 +59,8 @@
         {% if attendee.final_price is not none %}
             {% set my_final_price = attendee.final_price %}
         {% endif %}
+        {% set my_paid_amount = attendee.paid_amount or 0.0 %}
+        {% set my_remaining_amount = attendee.remaining_amount if attendee.remaining_amount is not none else ((attendee.final_price or 0.0) - my_paid_amount) %}
     {% endif %}
 {% endif %}
 
@@ -117,13 +124,13 @@
                         <span class="material-symbols-outlined">calendar_month</span>
                     </div>
                     <div>
-                        <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Date & Time</p>
+                        <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Date</p>
                         <p class="text-charcoal font-bold text-lg leading-tight">
-                            {{ frappe.utils.get_datetime(doc.start_date).strftime('%A, %d-%m-%Y %I:%M %p') }}
+                            {{ frappe.utils.get_datetime(doc.start_date).strftime('%A, %d-%m-%Y') if doc.start_date else 'TBA' }}
                         </p>
                         {% if doc.end_date %}
                             <p class="text-gray-600 text-sm mt-1">Until: 
-                                {{ frappe.utils.get_datetime(doc.end_date).strftime('%A, %d-%m-%Y %I:%M %p') }}
+                                {{ frappe.utils.get_datetime(doc.end_date).strftime('%A, %d-%m-%Y') }}
                             </p>
                         {% endif %}
                     </div>
@@ -237,14 +244,44 @@
                 {% else %}
                     
                     {% if my_rsvp == 'Registered' %}
-                        <div class="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 mb-4">
+                        <div class="p-4 sm:p-5 rounded-xl bg-green-50 border border-green-200 text-green-800 mb-4 shadow-sm">
                             <div class="flex items-center gap-3 mb-2">
-                                <span class="material-symbols-outlined text-2xl">check_circle</span>
+                                <span class="material-symbols-outlined text-2xl text-green-600">check_circle</span>
                                 <div>
-                                    <p class="font-bold">You are Registered!</p>
-                                    <p class="text-xs">Your seat is confirmed.</p>
+                                    <p class="font-bold text-green-900 text-base leading-tight">You are Registered!</p>
+                                    <p class="text-xs text-green-700">Your seat is confirmed.</p>
                                 </div>
                             </div>
+
+                            {% if doc.is_paid == 'Paid' and my_remaining_amount is not none and my_remaining_amount > 0 %}
+                            <div class="bg-white p-4 rounded-xl border border-green-200 mb-4 shadow-inner mt-4">
+                                <div class="text-center pb-3 border-b border-green-100">
+                                    <p class="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">Total Due</p>
+                                    <p class="text-3xl font-black text-charcoal">{{ my_final_price }}</p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 pt-3 text-center">
+                                    <div class="bg-green-50/60 p-2.5 rounded-lg border border-green-100">
+                                        <p class="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Paid Amount</p>
+                                        <p class="text-base font-black text-green-700">{{ my_paid_amount }}</p>
+                                    </div>
+                                    <div class="bg-rose-50/60 p-2.5 rounded-lg border border-rose-100">
+                                        <p class="text-[10px] text-rose-500 uppercase tracking-wider font-bold mb-0.5">Remaining</p>
+                                        <p class="text-base font-black text-rose-600">{{ my_remaining_amount }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if doc.payment_instructions %}
+                            <div class="bg-white/60 p-4 rounded-xl border border-green-200 mb-4">
+                                <p class="text-[10px] text-green-800 uppercase tracking-widest font-black mb-2 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]">info</span> Payment Instructions
+                                </p>
+                                <div class="prose prose-sm max-w-none text-gray-700 leading-snug">
+                                    {{ doc.payment_instructions }}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endif %}
                             
                             {% if doc.event_status != 'Completed' %}
                             <button onclick="cancelRegistration('{{ attendee_name }}')" class="text-xs text-red-600 hover:text-red-800 font-semibold underline ml-9 mb-4 block">
@@ -286,9 +323,21 @@
                             </div>
 
                             {% if doc.is_paid == 'Paid' and my_final_price is not none %}
-                            <div class="bg-white p-4 rounded-xl border border-orange-100 mb-4 text-center shadow-inner">
-                                <p class="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">Total Due</p>
-                                <p class="text-3xl font-black text-charcoal">{{ my_final_price }}</p>
+                            <div class="bg-white p-4 rounded-xl border border-orange-100 mb-4 shadow-inner">
+                                <div class="text-center pb-3 border-b border-orange-100/70">
+                                    <p class="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">Total Due</p>
+                                    <p class="text-3xl font-black text-charcoal">{{ my_final_price }}</p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 pt-3 text-center">
+                                    <div class="bg-orange-50/60 p-2.5 rounded-lg border border-orange-100">
+                                        <p class="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Paid Amount</p>
+                                        <p class="text-base font-black text-green-600">{{ my_paid_amount }}</p>
+                                    </div>
+                                    <div class="bg-orange-50/60 p-2.5 rounded-lg border border-orange-100">
+                                        <p class="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Remaining</p>
+                                        <p class="text-base font-black text-rose-600">{{ my_remaining_amount }}</p>
+                                    </div>
+                                </div>
                             </div>
                             {% endif %}
 
@@ -475,12 +524,6 @@
         </aside>
     </div>
 </main>
-
-<footer class="border-t border-border-gray py-12 mt-12 bg-light-gray">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <p class="text-gray-500 text-sm">Powered by Frappe Events App</p>
-    </div>
-</footer>
 
 <script>
     // --- DEPENDENCY LOGIC ---

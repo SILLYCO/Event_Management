@@ -26,6 +26,9 @@ class EventActivity(WebsiteGenerator):
         if self.event_status != old_status:
             self.db_set("event_status", self.event_status, update_modified=False)
 
+        context.no_footer = 1
+        context.hide_footer = 1
+
     def validate(self):
         """
         Run checks before saving the Event.

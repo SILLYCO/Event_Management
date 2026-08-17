@@ -28,6 +28,7 @@
   "payment_method",
   "column_break_btes",
   "paid_amount",
+  "remaining_amount",
   "section_break_lhqb",
   "custom_answers"
  ],
@@ -157,6 +158,12 @@
    "fieldname": "paid_amount",
    "fieldtype": "Currency",
    "label": "Paid Amount"
+  },
+  {
+   "fieldname": "remaining_amount",
+   "fieldtype": "Currency",
+   "label": "Remaining Amount",
+   "read_only": 1
   },
   {
    "fieldname": "promo_code",

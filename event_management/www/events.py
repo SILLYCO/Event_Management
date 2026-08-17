@@ -8,6 +8,9 @@ def get_context(context):
         frappe.local.flags.redirect_location = "/login?redirect-to=/events"
         raise frappe.Redirect
 
+    context.no_footer = 1
+    context.hide_footer = 1
+
     # 1. Fetch all PUBLISHED events (Added filter for published = 1)
     events = frappe.get_all(
         "Event Activity",

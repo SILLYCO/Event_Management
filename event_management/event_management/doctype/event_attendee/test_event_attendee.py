@@ -3,16 +3,19 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_to_date, now_datetime
 
 class TestEventAttendee(FrappeTestCase):
+    def get_or_create_user(self, email, first_name="Test"):
+        if frappe.db.exists("User", email):
+            return email
+        user = frappe.new_doc("User")
+        user.email = email
+        user.first_name = first_name
+        user.send_welcome_email = 0
+        user.insert(ignore_permissions=True)
+        return user.name
+
     def setUp(self):
-        # Create dummy events for testing
-        self.user = "test_attendee@example.com"
-        if not frappe.db.exists("User", self.user):
-            user = frappe.new_doc("User")
-            user.email = self.user
-            user.first_name = "Test"
-            user.last_name = "Attendee"
-            user.send_welcome_email = 0
-            user.insert(ignore_permissions=True)
+        frappe.set_user("Administrator")
+        self.user = self.get_or_create_user("test_attendee@example.com", "Test")
 
         self.start1 = now_datetime()
         self.end1 = add_to_date(self.start1, hours=2)
@@ -25,6 +28,7 @@ class TestEventAttendee(FrappeTestCase):
         self.event3 = self.create_test_event("Event 3", self.end1, add_to_date(self.end1, hours=2))
 
     def tearDown(self):
+        frappe.set_user("Administrator")
         frappe.db.rollback()
 
     def create_test_event(self, title, start_date, end_date):
@@ -108,15 +112,7 @@ class TestEventAttendee(FrappeTestCase):
         self.assertEqual(times_used, 1)
 
         # Create User 2
-        self.user2 = "test_attendee2@example.com"
-        if not frappe.db.exists("User", self.user2):
-            u2 = frappe.new_doc("User")
-            u2.email = self.user2
-            u2.first_name = "Test2"
-            u2.last_name = "Attendee"
-            u2.send_welcome_email = 0
-            u2.insert(ignore_permissions=True)
-
+        self.user2 = self.get_or_create_user("test_attendee2@example.com", "Test2")
         frappe.set_user(self.user2)
 
         # 2. Add second registration using the same promo code (User 2)
@@ -133,15 +129,7 @@ class TestEventAttendee(FrappeTestCase):
         self.assertEqual(times_used, 2)
 
         # Create User 3
-        self.user3 = "test_attendee3@example.com"
-        if not frappe.db.exists("User", self.user3):
-            u3 = frappe.new_doc("User")
-            u3.email = self.user3
-            u3.first_name = "Test3"
-            u3.last_name = "Attendee"
-            u3.send_welcome_email = 0
-            u3.insert(ignore_permissions=True)
-
+        self.user3 = self.get_or_create_user("test_attendee3@example.com", "Test3")
         frappe.set_user(self.user3)
 
         # 3. Third registration should fail due to usage limit reached (User 3)
@@ -174,5 +162,47 @@ class TestEventAttendee(FrappeTestCase):
         frappe.delete_doc("Event Attendee", reg3.name, ignore_permissions=True)
         times_used = frappe.db.get_value("Event Promo Code", promo_name, "times_used")
         self.assertEqual(times_used, 1)
+
+    def test_promo_code_preserved_on_status_change(self):
+        frappe.set_user(self.user)
+        promo_name = "STATUSPROMO"
+        self.create_test_promo_code(promo_name, limit=1, discount=20)
+
+        # 1. User registers with promo code
+        reg = frappe.new_doc("Event Attendee")
+        reg.event_activity = self.event1
+        reg.promo_code = promo_name
+        reg.event_is_paid = "Paid"
+        reg.event_price = 100.0
+        reg.insert(ignore_permissions=True)
+
+        self.assertEqual(reg.promo_code, promo_name)
+        self.assertEqual(reg.final_price, 80.0)
+        self.assertEqual(reg.remaining_amount, 80.0)
+
+        # 2. Administrator updates status to Pending Transaction
+        frappe.set_user("Administrator")
+        reg_doc = frappe.get_doc("Event Attendee", reg.name)
+        reg_doc.status = "Pending Transaction"
+        reg_doc.save(ignore_permissions=True)
+
+        reg_reloaded = frappe.get_doc("Event Attendee", reg.name)
+        self.assertEqual(reg_reloaded.status, "Pending Transaction")
+        self.assertEqual(reg_reloaded.promo_code, promo_name)
+        self.assertEqual(reg_reloaded.final_price, 80.0)
+        self.assertEqual(reg_reloaded.remaining_amount, 80.0)
+
+        # 3. Partial payment made, then status set to Registered
+        reg_reloaded.paid_amount = 60.0
+        reg_reloaded.status = "Registered"
+        reg_reloaded.save(ignore_permissions=True)
+
+        reg_final = frappe.get_doc("Event Attendee", reg.name)
+        self.assertEqual(reg_final.status, "Registered")
+        self.assertEqual(reg_final.promo_code, promo_name)
+        self.assertEqual(reg_final.final_price, 80.0)
+        self.assertEqual(reg_final.paid_amount, 60.0)
+        self.assertEqual(reg_final.remaining_amount, 20.0)
+
 
 

@@ -129,39 +129,37 @@ class EventAttendee(Document):
             base_price = float(self.event_price or 0.0)
             
             if self.promo_code:
-                # --- RACE CONDITION PROTECTION ---
-                # Lock row if new, promo changed, or status activated
-                promo_changed = False
-                if self.is_new():
-                    promo_changed = True
-                else:
-                    if (self.promo_code != self._old_promo_code) or (self.status in ["Pending Approval", "Pending Transaction", "Registered"] and self._old_status not in ["Pending Approval", "Pending Transaction", "Registered"]):
-                        promo_changed = True
-
-                if promo_changed:
+                # If promo code is new or changed, validate with row locking
+                if self.is_new() or (hasattr(self, "_old_promo_code") and self.promo_code != self._old_promo_code):
                     frappe.db.sql("""
                         SELECT name FROM `tabEvent Promo Code` 
                         WHERE name = %s FOR UPDATE
                     """, (self.promo_code,))
-                
-                # Re-validate with the locked state
-                result = validate_promo_code(self.promo_code, self.event_activity, self.name)
-                
-                if result.get("valid"):
-                    discount_amt = base_price * (float(result.get("discount_percentage")) / 100.0)
-                    self.final_price = base_price - discount_amt
-                else:
-                    # If invalid during insertion, abort the save entirely.
-                    if self.is_new():
-                        frappe.throw(f"Promo Code Error: {result.get('message')}")
+                    
+                    result = validate_promo_code(self.promo_code, self.event_activity, attendee_name=self.name, user=self.user)
+                    if result.get("valid"):
+                        discount_amt = base_price * (float(result.get("discount_percentage")) / 100.0)
+                        self.final_price = base_price - discount_amt
                     else:
-                        self.promo_code = None
-                        self.final_price = base_price
+                        frappe.throw(f"Promo Code Error: {result.get('message')}")
+                else:
+                    # Promo code is unchanged: preserve discounted final price
+                    discount_pct = frappe.db.get_value("Event Promo Code", self.promo_code, "discount_percentage") or 0.0
+                    discount_amt = base_price * (float(discount_pct) / 100.0)
+                    self.final_price = base_price - discount_amt
             else:
                 self.final_price = base_price
         else:
             self.promo_code = None
             self.final_price = 0.0
+
+        # Calculate Remaining Amount
+        if self.event_is_paid == "Paid":
+            final_price = float(self.final_price or 0.0)
+            paid_amount = float(self.paid_amount or 0.0)
+            self.remaining_amount = max(0.0, final_price - paid_amount)
+        else:
+            self.remaining_amount = 0.0
 
     def on_update(self):
         self.update_event_status()
@@ -238,7 +236,7 @@ def cancel_registration(attendee_name):
 
 # --- PROMO CODE VALIDATION API ---
 @frappe.whitelist()
-def validate_promo_code(promo_code, event_name, attendee_name=None):
+def validate_promo_code(promo_code, event_name, attendee_name=None, user=None):
     """
     Validates a promo code based on its type, category, limits, and user history.
     """
@@ -252,9 +250,17 @@ def validate_promo_code(promo_code, event_name, attendee_name=None):
     if not promo.active:
         return {"valid": False, "message": "This promo code is inactive."}
         
-    # 2. Check Usage Limits
-    if promo.usage_limit and promo.usage_limit > 0 and (promo.times_used or 0) >= promo.usage_limit:
-        return {"valid": False, "message": "This promo code has reached its usage limit."}
+    # 2. Check Usage Limits (exclude current attendee if updating)
+    if promo.usage_limit and promo.usage_limit > 0:
+        filters = {
+            "promo_code": promo_code,
+            "status": ["not in", ["Canceled", "Rejected"]]
+        }
+        if attendee_name:
+            filters["name"] = ["!=", attendee_name]
+        active_usage = frappe.db.count("Event Attendee", filters)
+        if active_usage >= promo.usage_limit:
+            return {"valid": False, "message": "This promo code has reached its usage limit."}
         
     # 3. Check Event Specific Logic
     if promo.promo_type == "Event Specific" and promo.target_event != event.name:
@@ -265,9 +271,10 @@ def validate_promo_code(promo_code, event_name, attendee_name=None):
         return {"valid": False, "message": f"This code is only valid for {promo.target_category} events."}
         
     # 5. Check One Per User Restriction (Prevent double-dipping)
-    if frappe.session.user != "Guest":
+    target_user = user or frappe.session.user
+    if target_user and target_user != "Guest":
         filters = {
-            "user": frappe.session.user,
+            "user": target_user,
             "promo_code": promo_code,
             "status": ["not in", ["Canceled", "Rejected"]] # FIX: Exclude canceled/rejected records
         }
