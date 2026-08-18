@@ -19,6 +19,13 @@ frappe.ui.form.on("Event Activity", {
 					frm.save();
 				});
 			}
+
+			// Add direct link to Financial & Attendee Report pre-filtered for this event
+			frm.add_custom_button(__("Financial & Attendee Report"), function () {
+				frappe.set_route("query-report", "Event Attendee Financial Report", {
+					event_activity: frm.doc.name
+				});
+			}, __("Reports"));
 		}
 	},
 });
