@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-21 11:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "payment_date",
+  "amount",
+  "payment_method",
+  "status",
+  "transaction_reference",
+  "receipt_image",
+  "rejection_reason",
+  "notes",
+  "recorded_by"
+ ],
+ "fields": [
+  {
+   "default": "Now",
+   "fieldname": "payment_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Payment Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount",
+   "reqd": 1
+  },
+  {
+   "default": "Instapay",
+   "fieldname": "payment_method",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Payment Method",
+   "options": "Instapay\nVodafone Cash\nCash\nOrange Cash\nEtisalat Money\nBank Transfer",
+   "reqd": 1
+  },
+  {
+   "default": "Pending Verification",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending Verification\nApproved\nRejected",
+   "reqd": 1
+  },
+  {
+   "fieldname": "transaction_reference",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Transaction Ref / ID"
+  },
+  {
+   "fieldname": "receipt_image",
+   "fieldtype": "Attach Image",
+   "in_list_view": 1,
+   "label": "Receipt Screenshot"
+  },
+  {
+   "fieldname": "rejection_reason",
+   "fieldtype": "Data",
+   "label": "Rejection Reason"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "recorded_by",
+   "fieldtype": "Data",
+   "label": "Recorded By"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-21 11:23:00.000000",
+ "modified_by": "Administrator",
+ "module": "Event Management",
+ "name": "Event Payment Entry",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "payment_date",
+ "sort_order": "ASC",
+ "states": []
+}

@@ -153,12 +153,20 @@ class EventAttendee(Document):
             self.promo_code = None
             self.final_price = 0.0
 
-        # Calculate Remaining Amount
+        # Calculate Remaining Amount and Paid Amount from Payment Ledger (only Approved entries)
         if self.event_is_paid == "Paid":
             final_price = float(self.final_price or 0.0)
-            paid_amount = float(self.paid_amount or 0.0)
-            self.remaining_amount = max(0.0, final_price - paid_amount)
+            if hasattr(self, "payment_entries") and self.payment_entries:
+                self.paid_amount = sum(
+                    float(entry.amount or 0.0)
+                    for entry in self.payment_entries
+                    if getattr(entry, "status", "Approved") == "Approved"
+                )
+            else:
+                self.paid_amount = float(self.paid_amount or 0.0)
+            self.remaining_amount = max(0.0, final_price - self.paid_amount)
         else:
+            self.paid_amount = 0.0
             self.remaining_amount = 0.0
 
     def on_update(self):
@@ -286,3 +294,69 @@ def validate_promo_code(promo_code, event_name, attendee_name=None, user=None):
             return {"valid": False, "message": "You have already used this promo code on a previous application."}
         
     return {"valid": True, "discount_percentage": promo.discount_percentage}
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_payment_proof(attendee_name, amount, payment_method, transaction_reference=None, notes=None):
+    """
+    Submits an installment payment proof for an attendee from the web page.
+    Optionally accepts a file uploaded in request.files.
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw("You must be logged in to submit payment proof.", frappe.PermissionError)
+
+    attendee = frappe.get_doc("Event Attendee", attendee_name)
+
+    # Ownership & Permission checks
+    if frappe.session.user != attendee.user and not frappe.has_permission("Event Attendee", "write"):
+        frappe.throw("You are not authorized to submit payment for this attendee record.", frappe.PermissionError)
+
+    if attendee.status not in ["Pending Transaction", "Registered"]:
+        frappe.throw("Cannot submit payment proof for an application in current status.", frappe.ValidationError)
+
+    amount = float(amount or 0.0)
+    if amount <= 0:
+        frappe.throw("Payment amount must be greater than zero.", frappe.ValidationError)
+
+    receipt_url = None
+    # Check if a file was uploaded in the request
+    if frappe.request and frappe.request.files:
+        file_obj = frappe.request.files.get("receipt_file")
+        if file_obj:
+            saved_file = frappe.get_doc({
+                "doctype": "File",
+                "file_name": file_obj.filename,
+                "attached_to_doctype": "Event Attendee",
+                "attached_to_name": attendee.name,
+                "attached_to_field": "receipt_image",
+                "content": file_obj.stream.read(),
+                "is_private": 0
+            })
+            saved_file.save(ignore_permissions=True)
+            receipt_url = saved_file.file_url
+
+    # Append new payment ledger entry
+    attendee.append("payment_entries", {
+        "payment_date": frappe.utils.now_datetime(),
+        "amount": amount,
+        "payment_method": payment_method or "Instapay",
+        "status": "Pending Verification",
+        "transaction_reference": transaction_reference or "",
+        "receipt_image": receipt_url or "",
+        "notes": notes or ("Web Payment Submission" if payment_method != "Cash" else "In-Person Cash Payment Logged"),
+        "recorded_by": frappe.session.user
+    })
+
+    # Update primary payment method on attendee if not set or changed
+    if payment_method:
+        attendee.payment_method = payment_method
+
+    attendee.save(ignore_permissions=True)
+
+    return {
+        "success": True,
+        "paid_amount": attendee.paid_amount,
+        "remaining_amount": attendee.remaining_amount,
+        "status": attendee.status,
+        "message": "Payment submitted and is pending verification by the organizers."
+    }

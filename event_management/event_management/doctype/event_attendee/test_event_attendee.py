@@ -204,5 +204,117 @@ class TestEventAttendee(FrappeTestCase):
         self.assertEqual(reg_final.paid_amount, 60.0)
         self.assertEqual(reg_final.remaining_amount, 20.0)
 
+    def test_multi_installment_payment_ledger(self):
+        frappe.set_user(self.user)
 
+        # 1. Create attendee for 100 EGP event
+        reg = frappe.new_doc("Event Attendee")
+        reg.event_activity = self.event1
+        reg.event_is_paid = "Paid"
+        reg.event_price = 100.0
+        reg.insert(ignore_permissions=True)
 
+        self.assertEqual(reg.final_price, 100.0)
+        self.assertEqual(reg.paid_amount, 0.0)
+        self.assertEqual(reg.remaining_amount, 100.0)
+
+        # 2. Add Installment 1: 30.0 with status Approved
+        reg.append("payment_entries", {
+            "payment_date": now_datetime(),
+            "amount": 30.0,
+            "payment_method": "Instapay",
+            "status": "Approved",
+            "transaction_reference": "INSTA-12345"
+        })
+        reg.save(ignore_permissions=True)
+
+        reg_check1 = frappe.get_doc("Event Attendee", reg.name)
+        self.assertEqual(reg_check1.paid_amount, 30.0)
+        self.assertEqual(reg_check1.remaining_amount, 70.0)
+        self.assertEqual(len(reg_check1.payment_entries), 1)
+
+        # 3. Add Installment 2: 50.0 with status Pending Verification (should NOT increase paid_amount)
+        reg_check1.append("payment_entries", {
+            "payment_date": now_datetime(),
+            "amount": 50.0,
+            "payment_method": "Vodafone Cash",
+            "status": "Pending Verification",
+            "transaction_reference": "01012345678"
+        })
+        reg_check1.save(ignore_permissions=True)
+
+        reg_check2 = frappe.get_doc("Event Attendee", reg.name)
+        self.assertEqual(reg_check2.paid_amount, 30.0)
+        self.assertEqual(reg_check2.remaining_amount, 70.0)
+        self.assertEqual(len(reg_check2.payment_entries), 2)
+
+        # 4. Add Installment 3: 20.0 with status Rejected (should NOT increase paid_amount)
+        reg_check2.append("payment_entries", {
+            "payment_date": now_datetime(),
+            "amount": 20.0,
+            "payment_method": "Cash",
+            "status": "Rejected",
+            "rejection_reason": "Receipt unreadable"
+        })
+        reg_check2.save(ignore_permissions=True)
+
+        reg_check3 = frappe.get_doc("Event Attendee", reg.name)
+        self.assertEqual(reg_check3.paid_amount, 30.0)
+        self.assertEqual(reg_check3.remaining_amount, 70.0)
+        self.assertEqual(len(reg_check3.payment_entries), 3)
+
+        # 5. Admin Approves Installment 2 (50.0)
+        frappe.set_user("Administrator")
+        reg_check3.payment_entries[1].status = "Approved"
+        reg_check3.save(ignore_permissions=True)
+
+        reg_check4 = frappe.get_doc("Event Attendee", reg.name)
+        self.assertEqual(reg_check4.paid_amount, 80.0)
+        self.assertEqual(reg_check4.remaining_amount, 20.0)
+
+    def test_submit_payment_proof_api(self):
+        frappe.set_user(self.user)
+
+        # 1. User applies (creates Pending Approval)
+        reg = frappe.new_doc("Event Attendee")
+        reg.event_activity = self.event1
+        reg.event_is_paid = "Paid"
+        reg.event_price = 100.0
+        reg.insert(ignore_permissions=True)
+
+        # 2. Administrator moves status to Pending Transaction (Payment Requested)
+        frappe.set_user("Administrator")
+        reg_doc = frappe.get_doc("Event Attendee", reg.name)
+        reg_doc.status = "Pending Transaction"
+        reg_doc.save(ignore_permissions=True)
+
+        # 3. User submits payment proof from Web
+        frappe.set_user(self.user)
+        from event_management.event_management.doctype.event_attendee.event_attendee import submit_payment_proof
+
+        res = submit_payment_proof(
+            attendee_name=reg.name,
+            amount=45.0,
+            payment_method="Instapay",
+            transaction_reference="INSTA-9999"
+        )
+
+        self.assertTrue(res.get("success"))
+        # Prior to admin approval, paid_amount remains 0.0
+        self.assertEqual(res.get("paid_amount"), 0.0)
+        self.assertEqual(res.get("remaining_amount"), 100.0)
+
+        reg_reloaded = frappe.get_doc("Event Attendee", reg.name)
+        self.assertEqual(reg_reloaded.paid_amount, 0.0)
+        self.assertEqual(reg_reloaded.remaining_amount, 100.0)
+        self.assertEqual(len(reg_reloaded.payment_entries), 1)
+        self.assertEqual(reg_reloaded.payment_entries[0].status, "Pending Verification")
+
+        # 4. Administrator approves the payment entry in Desk
+        frappe.set_user("Administrator")
+        reg_reloaded.payment_entries[0].status = "Approved"
+        reg_reloaded.save(ignore_permissions=True)
+
+        reg_approved = frappe.get_doc("Event Attendee", reg.name)
+        self.assertEqual(reg_approved.paid_amount, 45.0)
+        self.assertEqual(reg_approved.remaining_amount, 55.0)
