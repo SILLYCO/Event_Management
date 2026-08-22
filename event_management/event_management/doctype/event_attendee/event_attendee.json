@@ -29,6 +29,8 @@
   "column_break_btes",
   "paid_amount",
   "remaining_amount",
+  "payment_ledger_section",
+  "payment_entries",
   "section_break_lhqb",
   "custom_answers"
  ],
@@ -176,6 +178,17 @@
    "fieldtype": "Currency",
    "label": "Final Price",
    "read_only": 1
+  },
+  {
+   "fieldname": "payment_ledger_section",
+   "fieldtype": "Section Break",
+   "label": "Payment Ledger & Installments"
+  },
+  {
+   "fieldname": "payment_entries",
+   "fieldtype": "Table",
+   "label": "Payment Entries",
+   "options": "Event Payment Entry"
   }
  ],
  "grid_page_length": 50,

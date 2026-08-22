@@ -125,6 +125,12 @@ def get_columns(custom_questions):
 			"width": 150
 		},
 		{
+			"label": "Installments",
+			"fieldname": "installments_count",
+			"fieldtype": "Int",
+			"width": 100
+		},
+		{
 			"label": "Payment Method",
 			"fieldname": "payment_method",
 			"fieldtype": "Data",
@@ -190,11 +196,24 @@ def get_data(filters, custom_questions):
 		ORDER BY date DESC
 	""", values, as_dict=True)
 
+	installments_map = {}
+	if data:
+		attendee_names = [row["name"] for row in data]
+		counts = frappe.db.sql("""
+			SELECT parent, COUNT(name) as cnt
+			FROM `tabEvent Payment Entry`
+			WHERE parenttype = 'Event Attendee' AND parent IN %s
+			GROUP BY parent
+		""", (tuple(attendee_names),), as_dict=True)
+		for c in counts:
+			installments_map[c.parent] = c.cnt
+
 	for row in data:
 		row["event_price"] = flt(row.get("event_price"))
 		row["final_price"] = flt(row.get("final_price"))
 		row["paid_amount"] = flt(row.get("paid_amount"))
 		row["remaining_amount"] = flt(row.get("remaining_amount"))
+		row["installments_count"] = installments_map.get(row["name"], 0)
 
 		# Parse custom_answers JSON
 		answers_raw = row.get("custom_answers")

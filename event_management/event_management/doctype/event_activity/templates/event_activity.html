@@ -48,6 +48,7 @@
 {% set my_final_price = doc.ticket_price %}
 {% set my_paid_amount = 0.0 %}
 {% set my_remaining_amount = doc.ticket_price %}
+{% set my_payment_entries = [] %}
 
 {% if frappe.session.user != 'Guest' %}
     {% set attendee = frappe.db.get_value("Event Attendee", {"event_activity": doc.name, "user": frappe.session.user}, ["name", "status", "rejection_reason", "final_price", "paid_amount", "remaining_amount"], as_dict=True) %}
@@ -61,6 +62,7 @@
         {% endif %}
         {% set my_paid_amount = attendee.paid_amount or 0.0 %}
         {% set my_remaining_amount = attendee.remaining_amount if attendee.remaining_amount is not none else ((attendee.final_price or 0.0) - my_paid_amount) %}
+        {% set my_payment_entries = frappe.get_all("Event Payment Entry", filters={"parent": attendee.name, "parenttype": "Event Attendee"}, fields=["name", "payment_date", "amount", "payment_method", "status", "transaction_reference", "receipt_image", "rejection_reason", "notes"], order_by="payment_date asc") %}
     {% endif %}
 {% endif %}
 
@@ -296,11 +298,115 @@
                                         <p class="text-base font-black text-green-700">{{ my_paid_amount }}</p>
                                     </div>
                                     <div class="bg-rose-50/60 p-2.5 rounded-lg border border-rose-100">
-                                        <p class="text-[10px] text-rose-500 uppercase tracking-wider font-bold mb-0.5">Remaining</p>
+                        <p class="text-[10px] text-rose-500 uppercase tracking-wider font-bold mb-0.5">Remaining</p>
                                         <p class="text-base font-black text-rose-600">{{ my_remaining_amount }}</p>
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
+
+                            <!-- Payment History Ledger -->
+                            {% if my_payment_entries and my_payment_entries | length > 0 %}
+                            <div class="bg-white p-3.5 rounded-xl border border-green-100 mb-4 shadow-sm">
+                                <div class="flex items-center justify-between mb-2.5 border-b border-gray-100 pb-1.5">
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-widest font-black flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[13px] text-primary">receipt_long</span> Payment History
+                                    </p>
+                                    <span class="text-[9px] bg-green-100 text-green-800 font-bold px-2 py-0.5 rounded-full">{{ my_payment_entries | length }} {{ 'Entry' if my_payment_entries | length == 1 else 'Entries' }}</span>
+                                </div>
+                                <div class="space-y-2">
+                                    {% for entry in my_payment_entries %}
+                                    <div class="flex items-center justify-between p-2.5 rounded-lg {% if entry.status == 'Approved' %}bg-green-50/50 border border-green-100{% elif entry.status == 'Rejected' %}bg-red-50/50 border border-red-100{% else %}bg-amber-50/50 border border-amber-100{% endif %} text-xs">
+                                        <div>
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <span class="font-bold text-gray-800">{{ entry.payment_method }}</span>
+                                                {% if entry.status == 'Approved' %}
+                                                <span class="text-[9px] bg-green-100 text-green-800 font-bold px-1.5 py-0.5 rounded">Verified</span>
+                                                {% elif entry.status == 'Rejected' %}
+                                                <span class="text-[9px] bg-red-100 text-red-700 font-bold px-1.5 py-0.5 rounded">Declined</span>
+                                                {% else %}
+                                                <span class="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">Under Review</span>
+                                                {% endif %}
+                                                {% if entry.transaction_reference %}
+                                                <span class="text-[10px] text-gray-400 font-mono font-normal">#{{ entry.transaction_reference }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <p class="text-[10px] text-gray-400 mt-0.5">{{ frappe.utils.get_datetime(entry.payment_date).strftime('%d-%m-%Y %I:%M %p') if entry.payment_date else '' }}</p>
+                                            {% if entry.status == 'Rejected' and entry.rejection_reason %}
+                                            <p class="text-[10px] text-red-600 mt-0.5"><span class="font-semibold">Reason:</span> {{ entry.rejection_reason }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-black text-sm {% if entry.status == 'Approved' %}text-green-700{% elif entry.status == 'Rejected' %}text-red-500 line-through{% else %}text-amber-700{% endif %}">
+                                                {% if entry.status == 'Approved' %}+{% endif %}{{ entry.amount }}
+                                            </p>
+                                            {% if entry.receipt_image %}
+                                            <a href="{{ entry.receipt_image }}" target="_blank" class="text-[10px] text-primary hover:underline inline-flex items-center gap-0.5">
+                                                <span class="material-symbols-outlined text-[11px]">image</span> Receipt
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Submit Next Installment Form (if balance remains) -->
+                            {% if doc.is_paid == 'Paid' and my_remaining_amount is not none and my_remaining_amount > 0 %}
+                            <div class="bg-white p-4 rounded-xl border border-green-200 mb-4 shadow-sm">
+                                <div class="flex items-center justify-between mb-3">
+                                    <p class="text-[10px] text-gray-600 uppercase tracking-widest font-black flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[13px] text-primary">add_card</span> Submit Installment
+                                    </p>
+                                    <span class="text-[10px] bg-rose-50 text-rose-600 font-bold px-2 py-0.5 rounded-full">Due: {{ my_remaining_amount }}</span>
+                                </div>
+
+                                <form onsubmit="handlePaymentProofSubmit(event, '{{ attendee_name }}', 'reg_')" class="space-y-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1">Method</label>
+                                        <select id="reg_proof_method" onchange="toggleCashNotice(this.value, 'reg_')" class="w-full text-xs py-2 px-2.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-primary">
+                                            <option value="Instapay">Instapay</option>
+                                            <option value="Vodafone Cash">Vodafone Cash</option>
+                                            <option value="Cash">Cash (In-Person / At Venue)</option>
+                                            <option value="Orange Cash">Orange Cash</option>
+                                            <option value="Etisalat Money">Etisalat Money</option>
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <label class="block text-[10px] font-bold text-gray-600 uppercase">Amount</label>
+                                            <span class="text-[10px] text-gray-400">Max: {{ my_remaining_amount }}</span>
+                                        </div>
+                                        <input type="number" step="any" min="1" max="{{ my_remaining_amount }}" id="reg_proof_amount" value="{{ my_remaining_amount }}" required class="w-full text-xs py-2 px-2.5 rounded-lg border border-gray-200 bg-white font-bold text-charcoal focus:outline-none focus:border-primary"/>
+                                    </div>
+
+                                    <div id="reg_receipt_group" class="space-y-3">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1">Ref / Mobile <span class="text-gray-400 font-normal lowercase">(optional)</span></label>
+                                            <input type="text" id="reg_proof_ref" placeholder="e.g. Ref # / Wallet #" class="w-full text-xs py-2 px-2.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-primary"/>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1">Receipt Screenshot</label>
+                                            <input type="file" id="reg_proof_file" accept="image/*,.pdf" class="w-full text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"/>
+                                        </div>
+                                    </div>
+
+                                    <div id="reg_cash_box" class="hidden p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                                        <p class="font-bold text-[11px]">In-Person Cash Payment</p>
+                                        <p class="text-[10px] text-amber-700 mt-0.5">Please pay this installment directly at the venue reception. Our team will log your digital receipt upon payment.</p>
+                                    </div>
+
+                                    <button type="submit" id="reg_submit_btn" class="w-full py-2.5 rounded-lg bg-primary hover:bg-blue-600 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                                        <span class="material-symbols-outlined text-sm">cloud_upload</span>
+                                        <span id="reg_submit_text">Submit Payment Entry</span>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
 
                             {% if doc.payment_instructions %}
                             <div class="bg-white/60 p-4 rounded-xl border border-green-200 mb-4">
@@ -311,7 +417,6 @@
                                     {{ doc.payment_instructions }}
                                 </div>
                             </div>
-                            {% endif %}
                             {% endif %}
                             
                             {% if doc.event_status != 'Completed' %}
@@ -369,6 +474,109 @@
                                         <p class="text-base font-black text-rose-600">{{ my_remaining_amount }}</p>
                                     </div>
                                 </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Payment History Ledger -->
+                            {% if my_payment_entries and my_payment_entries | length > 0 %}
+                            <div class="bg-white p-3.5 rounded-xl border border-orange-100 mb-4 shadow-sm">
+                                <div class="flex items-center justify-between mb-2.5 border-b border-gray-100 pb-1.5">
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-widest font-black flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[13px] text-primary">receipt_long</span> Payment History
+                                    </p>
+                                    <span class="text-[9px] bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded-full">{{ my_payment_entries | length }} {{ 'Entry' if my_payment_entries | length == 1 else 'Entries' }}</span>
+                                </div>
+                                <div class="space-y-2">
+                                    {% for entry in my_payment_entries %}
+                                    <div class="flex items-center justify-between p-2.5 rounded-lg {% if entry.status == 'Approved' %}bg-green-50/50 border border-green-100{% elif entry.status == 'Rejected' %}bg-red-50/50 border border-red-100{% else %}bg-amber-50/50 border border-amber-100{% endif %} text-xs">
+                                        <div>
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <span class="font-bold text-gray-800">{{ entry.payment_method }}</span>
+                                                {% if entry.status == 'Approved' %}
+                                                <span class="text-[9px] bg-green-100 text-green-800 font-bold px-1.5 py-0.5 rounded">Verified</span>
+                                                {% elif entry.status == 'Rejected' %}
+                                                <span class="text-[9px] bg-red-100 text-red-700 font-bold px-1.5 py-0.5 rounded">Declined</span>
+                                                {% else %}
+                                                <span class="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">Under Review</span>
+                                                {% endif %}
+                                                {% if entry.transaction_reference %}
+                                                <span class="text-[10px] text-gray-400 font-mono font-normal">#{{ entry.transaction_reference }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <p class="text-[10px] text-gray-400 mt-0.5">{{ frappe.utils.get_datetime(entry.payment_date).strftime('%d-%m-%Y %I:%M %p') if entry.payment_date else '' }}</p>
+                                            {% if entry.status == 'Rejected' and entry.rejection_reason %}
+                                            <p class="text-[10px] text-red-600 mt-0.5"><span class="font-semibold">Reason:</span> {{ entry.rejection_reason }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-black text-sm {% if entry.status == 'Approved' %}text-green-700{% elif entry.status == 'Rejected' %}text-red-500 line-through{% else %}text-amber-700{% endif %}">
+                                                {% if entry.status == 'Approved' %}+{% endif %}{{ entry.amount }}
+                                            </p>
+                                            {% if entry.receipt_image %}
+                                            <a href="{{ entry.receipt_image }}" target="_blank" class="text-[10px] text-primary hover:underline inline-flex items-center gap-0.5">
+                                                <span class="material-symbols-outlined text-[11px]">image</span> Receipt
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Submit Payment Proof / Installment Form -->
+                            {% if doc.is_paid == 'Paid' and my_remaining_amount is not none and my_remaining_amount > 0 %}
+                            <div class="bg-white p-4 rounded-xl border border-orange-200 mb-4 shadow-sm">
+                                <div class="flex items-center justify-between mb-3">
+                                    <p class="text-[10px] text-charcoal uppercase tracking-widest font-black flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[13px] text-primary">add_card</span> Submit Payment Proof
+                                    </p>
+                                    <span class="text-[10px] bg-rose-50 text-rose-600 font-bold px-2 py-0.5 rounded-full">Due: {{ my_remaining_amount }}</span>
+                                </div>
+
+                                <form onsubmit="handlePaymentProofSubmit(event, '{{ attendee_name }}', 'pen_')" class="space-y-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1">Method</label>
+                                        <select id="pen_proof_method" onchange="toggleCashNotice(this.value, 'pen_')" class="w-full text-xs py-2 px-2.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-primary">
+                                            <option value="Instapay">Instapay</option>
+                                            <option value="Vodafone Cash">Vodafone Cash</option>
+                                            <option value="Cash">Cash (In-Person / At Venue)</option>
+                                            <option value="Orange Cash">Orange Cash</option>
+                                            <option value="Etisalat Money">Etisalat Money</option>
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <label class="block text-[10px] font-bold text-gray-600 uppercase">Amount</label>
+                                            <span class="text-[10px] text-gray-400">Max: {{ my_remaining_amount }}</span>
+                                        </div>
+                                        <input type="number" step="any" min="1" max="{{ my_remaining_amount }}" id="pen_proof_amount" value="{{ my_remaining_amount }}" required class="w-full text-xs py-2 px-2.5 rounded-lg border border-gray-200 bg-white font-bold text-charcoal focus:outline-none focus:border-primary"/>
+                                    </div>
+
+                                    <div id="pen_receipt_group" class="space-y-3">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1">Ref / Mobile <span class="text-gray-400 font-normal lowercase">(optional)</span></label>
+                                            <input type="text" id="pen_proof_ref" placeholder="e.g. Ref # / Wallet #" class="w-full text-xs py-2 px-2.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-primary"/>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1">Receipt Screenshot</label>
+                                            <input type="file" id="pen_proof_file" accept="image/*,.pdf" class="w-full text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"/>
+                                        </div>
+                                    </div>
+
+                                    <div id="pen_cash_box" class="hidden p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                                        <p class="font-bold text-[11px]">In-Person Cash Payment</p>
+                                        <p class="text-[10px] text-amber-700 mt-0.5">Please pay this installment directly at the venue reception. Our team will log your digital receipt upon payment.</p>
+                                    </div>
+
+                                    <button type="submit" id="pen_submit_btn" class="w-full py-2.5 rounded-lg bg-primary hover:bg-blue-600 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                                        <span class="material-symbols-outlined text-sm">cloud_upload</span>
+                                        <span id="pen_submit_text">Submit Payment Entry</span>
+                                    </button>
+                                </form>
                             </div>
                             {% endif %}
 
@@ -735,6 +943,84 @@
                     setTimeout(() => window.location.reload(), 1500);
                 }
             }
+        });
+    }
+
+    // 2.5 Multi-Installment Payment Submission Controller
+    function toggleCashNotice(method, prefix) {
+        prefix = prefix || '';
+        const cashBox = document.getElementById(prefix + 'cash_box');
+        const receiptGroup = document.getElementById(prefix + 'receipt_group');
+        if (method === 'Cash') {
+            if (cashBox) cashBox.classList.remove('hidden');
+            if (receiptGroup) receiptGroup.classList.add('hidden');
+        } else {
+            if (cashBox) cashBox.classList.add('hidden');
+            if (receiptGroup) receiptGroup.classList.remove('hidden');
+        }
+    }
+
+    function handlePaymentProofSubmit(e, attendeeName, prefix) {
+        e.preventDefault();
+        prefix = prefix || '';
+        const btn = document.getElementById(prefix + 'submit_btn');
+        const btnText = document.getElementById(prefix + 'submit_text');
+        const method = document.getElementById(prefix + 'proof_method').value;
+        const amount = document.getElementById(prefix + 'proof_amount').value;
+        const refInput = document.getElementById(prefix + 'proof_ref');
+        const ref = refInput ? refInput.value : '';
+        const fileInput = document.getElementById(prefix + 'proof_file');
+        
+        if (!amount || parseFloat(amount) <= 0) {
+            frappe.msgprint({ title: 'Error', message: 'Please enter a valid payment amount.', indicator: 'red' });
+            return;
+        }
+
+        if (method !== 'Cash' && fileInput && (!fileInput.files || fileInput.files.length === 0)) {
+            frappe.msgprint({ title: 'Receipt Required', message: 'Please attach your transfer screenshot or receipt proof.', indicator: 'orange' });
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('attendee_name', attendeeName);
+        formData.append('amount', amount);
+        formData.append('payment_method', method);
+        formData.append('transaction_reference', ref);
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            formData.append('receipt_file', fileInput.files[0]);
+        }
+
+        if (btn) {
+            btn.disabled = true;
+            if (btnText) btnText.textContent = 'Submitting...';
+        }
+
+        fetch('/api/method/event_management.event_management.doctype.event_attendee.event_attendee.submit_payment_proof', {
+            method: 'POST',
+            headers: {
+                'X-Frappe-CSRF-Token': frappe.csrf_token
+            },
+            body: formData
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (btn) {
+                btn.disabled = false;
+                if (btnText) btnText.textContent = 'Submit Payment Entry';
+            }
+            if (res.exc || res._server_messages) {
+                frappe.msgprint({ title: 'Submission Failed', message: 'Could not record payment. Please check your inputs.', indicator: 'red' });
+            } else {
+                frappe.show_alert({ message: 'Payment recorded successfully!', indicator: 'green' });
+                setTimeout(() => window.location.reload(), 800);
+            }
+        })
+        .catch(err => {
+            if (btn) {
+                btn.disabled = false;
+                if (btnText) btnText.textContent = 'Submit Payment Entry';
+            }
+            frappe.msgprint({ title: 'Error', message: 'Network or server error.', indicator: 'red' });
         });
     }
 
