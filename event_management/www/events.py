@@ -83,4 +83,11 @@ def get_context(context):
         if event.capacity and event.capacity > 0:
             event.fill_percentage = min(int((event.registered_count / event.capacity) * 100), 100)
 
+    context.user_ticket_count = 0
+    if frappe.session.user != "Guest":
+        context.user_ticket_count = frappe.db.count("Event Attendee", {
+            "user": frappe.session.user,
+            "status": ["in", ["Registered", "Pending Transaction", "Pending Approval"]]
+        })
+
     context.events = events

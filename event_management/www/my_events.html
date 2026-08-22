@@ -1,0 +1,600 @@
+{% extends "templates/web.html" %}
+
+{% block footer %}{% endblock %}
+{% block page_footer %}{% endblock %}
+
+{% block page_content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { 
+                        "primary": "#137fec", 
+                        "charcoal": "#0f172a", 
+                        "soft-bg": "#f8fafc" 
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"] }
+                }
+            }
+        }
+    </script>
+    <style>
+        .ticket-cutout-left, .ticket-cutout-right {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background-color: #f8fafc;
+            border-radius: 50%;
+        }
+        .ticket-cutout-left { left: -10px; }
+        .ticket-cutout-right { right: -10px; }
+        @media print {
+            body * { visibility: hidden; }
+            #ticket-print-area, #ticket-print-area * { visibility: visible; }
+            #ticket-print-area {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                background: white;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-soft-bg min-h-screen font-display pb-24 text-charcoal selection:bg-primary selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-40 backdrop-blur-md bg-white/90">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="/events" class="flex items-center gap-2 text-charcoal hover:text-primary transition-colors">
+                    <span class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black">
+                        <span class="material-symbols-outlined text-lg">event</span>
+                    </span>
+                    <span class="font-extrabold text-base tracking-tight">Event Hub</span>
+                </a>
+                <span class="text-gray-300">/</span>
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">My Tickets & Registrations</span>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="/events" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-charcoal text-xs font-bold transition-all">
+                    <span class="material-symbols-outlined text-sm">explore</span>
+                    Browse Events
+                </a>
+                <div class="flex items-center gap-2 pl-2 border-l border-gray-200">
+                    <div class="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-black uppercase">
+                        {{ user_fullname[0] if user_fullname else 'U' }}
+                    </div>
+                    <span class="text-xs font-bold text-gray-700 hidden sm:inline">{{ user_fullname }}</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+
+        <!-- Welcome Banner & Summary Stats -->
+        <div class="bg-gradient-to-br from-charcoal to-slate-800 rounded-3xl p-6 sm:p-8 md:p-10 text-white shadow-xl mb-10 relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute right-20 top-0 w-32 h-32 bg-blue-400/10 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-blue-200 text-xs font-semibold mb-3 backdrop-blur-sm">
+                        <span class="material-symbols-outlined text-sm">badge</span> Attendee Dashboard
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight mb-2">Welcome, {{ user_fullname }}!</h1>
+                    <p class="text-sm text-gray-300 max-w-xl">Access your confirmed tickets, manage outstanding balances, review registration requests, and view event passes.</p>
+                </div>
+
+                <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/10 text-center min-w-[90px] sm:min-w-[110px]">
+                        <p class="text-2xl sm:text-3xl font-black text-green-400">{{ kpi_confirmed }}</p>
+                        <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-300 mt-0.5">Tickets</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/10 text-center min-w-[90px] sm:min-w-[110px]">
+                        <p class="text-2xl sm:text-3xl font-black text-amber-400">{{ kpi_pending }}</p>
+                        <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-300 mt-0.5">Pending</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/10 text-center min-w-[90px] sm:min-w-[110px]">
+                        <p class="text-2xl sm:text-3xl font-black text-blue-300">{{ kpi_past }}</p>
+                        <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-300 mt-0.5">Attended</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Tab Filter Navigation -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-8 border-b border-gray-200 hide-scrollbar" id="tab-nav">
+            <button onclick="switchTab('confirmed')" id="tab-btn-confirmed" class="tab-button active flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-xs sm:text-sm transition-all bg-charcoal text-white shadow-sm cursor-pointer whitespace-nowrap">
+                <span class="material-symbols-outlined text-base">confirmation_number</span>
+                Confirmed Tickets
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-white/20 text-white">{{ confirmed_tickets | length }}</span>
+            </button>
+
+            <button onclick="switchTab('pending')" id="tab-btn-pending" class="tab-button flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-xs sm:text-sm transition-all bg-white text-gray-600 hover:bg-gray-100 hover:text-charcoal border border-gray-200 cursor-pointer whitespace-nowrap">
+                <span class="material-symbols-outlined text-base text-amber-500">pending_actions</span>
+                Action Needed & Pending
+                {% if pending_actions | length > 0 %}
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-800">{{ pending_actions | length }}</span>
+                {% endif %}
+            </button>
+
+            <button onclick="switchTab('past')" id="tab-btn-past" class="tab-button flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-xs sm:text-sm transition-all bg-white text-gray-600 hover:bg-gray-100 hover:text-charcoal border border-gray-200 cursor-pointer whitespace-nowrap">
+                <span class="material-symbols-outlined text-base text-blue-500">history</span>
+                Past Events
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-gray-100 text-gray-600">{{ past_events | length }}</span>
+            </button>
+
+            <button onclick="switchTab('cancelled')" id="tab-btn-cancelled" class="tab-button flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-xs sm:text-sm transition-all bg-white text-gray-600 hover:bg-gray-100 hover:text-charcoal border border-gray-200 cursor-pointer whitespace-nowrap">
+                <span class="material-symbols-outlined text-base text-red-400">block</span>
+                Cancelled / Declined
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-gray-100 text-gray-600">{{ cancelled_tickets | length }}</span>
+            </button>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 1: CONFIRMED TICKETS                   -->
+        <!-- ========================================== -->
+        <div id="tab-content-confirmed" class="tab-pane space-y-6">
+            {% if confirmed_tickets and confirmed_tickets | length > 0 %}
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for ticket in confirmed_tickets %}
+                    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+                        
+                        <!-- Event Image & Badges -->
+                        <div class="relative h-44 w-full bg-gray-100 overflow-hidden">
+                            {% if ticket.event_image %}
+                            <img src="{{ ticket.event_image }}" alt="{{ ticket.event_title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                            {% else %}
+                            <div class="w-full h-full bg-gradient-to-tr from-slate-200 to-slate-100 flex items-center justify-center text-gray-400">
+                                <span class="material-symbols-outlined text-5xl">photo</span>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="absolute top-3 left-3 flex items-center gap-2">
+                                <span class="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-charcoal text-[11px] font-bold shadow-sm">
+                                    {{ ticket.event_category }}
+                                </span>
+                            </div>
+
+                            <div class="absolute top-3 right-3">
+                                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-500 text-white text-xs font-black shadow-md">
+                                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                                    Registered
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="p-5 flex-1 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between text-xs text-gray-400 font-mono mb-1.5">
+                                    <span>#{{ ticket.name }}</span>
+                                    <span>{{ ticket.formatted_start_date }}</span>
+                                </div>
+                                <h3 class="font-black text-lg text-charcoal leading-snug mb-3 group-hover:text-primary transition-colors">
+                                    <a href="/{{ ticket.route }}">{{ ticket.event_title }}</a>
+                                </h3>
+
+                                <!-- Financial Status Box -->
+                                {% if ticket.is_paid == 'Paid' %}
+                                <div class="p-3 rounded-xl {% if ticket.remaining_amount == 0 %}bg-green-50/70 border border-green-200 text-green-900{% else %}bg-amber-50/70 border border-amber-200 text-amber-900{% endif %} text-xs mb-4">
+                                    <div class="flex items-center justify-between font-bold">
+                                        <span>Payment Status:</span>
+                                        {% if ticket.remaining_amount == 0 %}
+                                        <span class="text-green-700 flex items-center gap-0.5">
+                                            <span class="material-symbols-outlined text-sm">verified</span> Fully Paid ({{ ticket.final_price }} EGP)
+                                        </span>
+                                        {% else %}
+                                        <span class="text-rose-600">Remaining: {{ ticket.remaining_amount }} EGP</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if ticket.remaining_amount > 0 %}
+                                    <div class="mt-2 pt-2 border-t border-amber-200/60 flex items-center justify-between">
+                                        <span class="text-[11px] text-gray-600">Paid: {{ ticket.paid_amount }} / {{ ticket.final_price }} EGP</span>
+                                        <a href="/{{ ticket.route }}" class="text-[11px] font-bold text-primary hover:underline flex items-center gap-0.5">
+                                            Pay Remaining <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+
+                                <!-- Custom Field Badges (e.g. Size, Transportation) -->
+                                {% if ticket.custom_fields_list %}
+                                <div class="flex items-center gap-2 flex-wrap mb-4">
+                                    {% for cf in ticket.custom_fields_list %}
+                                    <span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[10px] font-semibold">
+                                        {{ cf.label }}: <strong class="text-charcoal">{{ cf.value }}</strong>
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Card Action Buttons -->
+                            <div class="pt-4 border-t border-gray-100 space-y-2">
+                                <button onclick="openTicketModal('{{ ticket.name }}')" class="w-full py-2.5 px-4 rounded-xl bg-charcoal hover:bg-primary text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+                                    <span class="material-symbols-outlined text-sm">qr_code_2</span>
+                                    View Digital Ticket Pass
+                                </button>
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="addToGoogleCal('{{ ticket.event_title | escape }}', '{{ ticket.start_date_iso }}', '{{ ticket.end_date_iso }}', '{{ ticket.event_description | striptags | escape }}')" class="py-2 px-3 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold transition-all flex items-center justify-center gap-1">
+                                        <span class="material-symbols-outlined text-xs text-blue-600">calendar_add_on</span>
+                                        Calendar
+                                    </button>
+                                    <a href="/{{ ticket.route }}" class="py-2 px-3 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold transition-all flex items-center justify-center gap-1 text-center">
+                                        <span class="material-symbols-outlined text-xs">open_in_new</span>
+                                        Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-white rounded-3xl p-12 text-center border border-gray-200">
+                    <div class="w-16 h-16 rounded-full bg-blue-50 text-primary flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-outlined text-3xl">confirmation_number</span>
+                    </div>
+                    <h3 class="text-lg font-black text-charcoal mb-1">No Confirmed Tickets Yet</h3>
+                    <p class="text-sm text-gray-500 max-w-sm mx-auto mb-6">Explore our latest events, scout camps, and workshops to secure your spot today.</p>
+                    <a href="/events" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary hover:bg-blue-600 text-white font-bold text-sm shadow-md transition-all">
+                        <span class="material-symbols-outlined text-base">search</span>
+                        Browse Upcoming Events
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: PENDING ACTIONS & APPLICATIONS      -->
+        <!-- ========================================== -->
+        <div id="tab-content-pending" class="tab-pane hidden space-y-6">
+            {% if pending_actions and pending_actions | length > 0 %}
+                <div class="grid md:grid-cols-2 gap-6">
+                    {% for item in pending_actions %}
+                    <div class="bg-white rounded-2xl border {% if item.status == 'Pending Transaction' %}border-orange-200 bg-orange-50/20{% else %}border-yellow-200 bg-yellow-50/20{% endif %} p-6 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded-full bg-white text-charcoal text-[11px] font-bold border border-gray-200">
+                                    {{ item.event_category }}
+                                </span>
+                                {% if item.status == 'Pending Transaction' %}
+                                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-black">
+                                    <span class="material-symbols-outlined text-sm">payments</span>
+                                    Awaiting Payment
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-black">
+                                    <span class="material-symbols-outlined text-sm">hourglass_top</span>
+                                    Pending Approval
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <h3 class="font-black text-xl text-charcoal mb-2">
+                                <a href="/{{ item.route }}" class="hover:text-primary transition-colors">{{ item.event_title }}</a>
+                            </h3>
+                            <p class="text-xs text-gray-500 mb-4 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">calendar_month</span>
+                                {{ item.formatted_start_date }}
+                            </p>
+
+                            {% if item.status == 'Pending Transaction' %}
+                            <div class="bg-white p-4 rounded-xl border border-orange-200 mb-4">
+                                <div class="flex items-center justify-between text-xs pb-2 border-b border-gray-100 font-bold text-gray-600">
+                                    <span>Total Due: <strong class="text-charcoal">{{ item.final_price }} EGP</strong></span>
+                                    <span>Paid: <strong class="text-green-600">{{ item.paid_amount }} EGP</strong></span>
+                                </div>
+                                <div class="pt-2 flex items-center justify-between">
+                                    <span class="text-xs font-black text-rose-600">Remaining to Pay: {{ item.remaining_amount }} EGP</span>
+                                    {% if item.pending_payments_count > 0 %}
+                                    <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">Proof Under Review</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="bg-white p-4 rounded-xl border border-yellow-200 text-xs text-yellow-900 mb-4">
+                                <p class="font-semibold">Your registration request has been submitted.</p>
+                                <p class="text-[11px] text-gray-500 mt-1">Our organizers are reviewing your application. You will be notified once approved.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-100">
+                            {% if item.status == 'Pending Transaction' %}
+                            <a href="/{{ item.route }}" class="w-full py-2.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 text-center">
+                                <span class="material-symbols-outlined text-sm">cloud_upload</span>
+                                Complete Payment / Submit Proof
+                            </a>
+                            {% else %}
+                            <a href="/{{ item.route }}" class="w-full py-2 px-4 rounded-xl border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-bold transition-all text-center block">
+                                View Event Details
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-white rounded-3xl p-12 text-center border border-gray-200">
+                    <div class="w-16 h-16 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-outlined text-3xl">task_alt</span>
+                    </div>
+                    <h3 class="text-lg font-black text-charcoal mb-1">No Pending Actions</h3>
+                    <p class="text-sm text-gray-500 max-w-sm mx-auto">All your applications and payments are up to date.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: PAST EVENTS ARCHIVE                 -->
+        <!-- ========================================== -->
+        <div id="tab-content-past" class="tab-pane hidden space-y-6">
+            {% if past_events and past_events | length > 0 %}
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for item in past_events %}
+                    <div class="bg-white rounded-2xl border border-gray-200 p-5 flex flex-col justify-between opacity-90 hover:opacity-100 transition-opacity">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">{{ item.event_category }}</span>
+                                <span class="text-[10px] bg-gray-100 text-gray-600 font-bold px-2 py-0.5 rounded-full">Completed</span>
+                            </div>
+                            <h3 class="font-black text-base text-charcoal mb-1">
+                                <a href="/{{ item.route }}" class="hover:text-primary transition-colors">{{ item.event_title }}</a>
+                            </h3>
+                            <p class="text-xs text-gray-400 mb-4">{{ item.formatted_start_date }}</p>
+                        </div>
+
+                        <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
+                            <button onclick="openTicketModal('{{ item.name }}')" class="text-xs font-bold text-gray-600 hover:text-charcoal flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">receipt</span>
+                                View Pass Record
+                            </button>
+                            <a href="/{{ item.route }}" class="text-xs font-bold text-primary hover:underline flex items-center gap-0.5">
+                                Event Gallery <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-white rounded-3xl p-12 text-center border border-gray-200">
+                    <p class="text-sm text-gray-500">No past events recorded yet.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: CANCELLED / DECLINED                -->
+        <!-- ========================================== -->
+        <div id="tab-content-cancelled" class="tab-pane hidden space-y-6">
+            {% if cancelled_tickets and cancelled_tickets | length > 0 %}
+                <div class="space-y-3">
+                    {% for item in cancelled_tickets %}
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between text-xs">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-charcoal">{{ item.event_title }}</span>
+                                {% if item.status == 'Canceled' %}
+                                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-bold text-[10px]">Cancelled</span>
+                                {% else %}
+                                <span class="px-2 py-0.5 rounded bg-red-100 text-red-700 font-bold text-[10px]">Declined</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-400 text-[11px] mt-0.5">{{ item.formatted_start_date }}</p>
+                            {% if item.rejection_reason %}
+                            <p class="text-red-600 text-[11px] mt-1">Reason: {{ item.rejection_reason }}</p>
+                            {% endif %}
+                        </div>
+                        <a href="/{{ item.route }}" class="text-primary font-bold hover:underline">View Event</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-white rounded-3xl p-12 text-center border border-gray-200">
+                    <p class="text-sm text-gray-500">No cancelled or declined registrations.</p>
+                </div>
+            {% endif %}
+        </div>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- DIGITAL TICKET PASS MODAL                  -->
+    <!-- ========================================== -->
+    <div id="ticket-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl relative animate-fade-in-up" onclick="event.stopPropagation()">
+            
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-5 bg-charcoal text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-xl">confirmation_number</span>
+                    <span class="font-black text-sm uppercase tracking-wider">Official Event Pass</span>
+                </div>
+                <button onclick="closeTicketModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+
+            <!-- Ticket Printable Body -->
+            <div id="ticket-print-area" class="p-6 sm:p-8 bg-white">
+                <div class="border-2 border-dashed border-gray-300 rounded-2xl p-6 relative bg-gradient-to-br from-white to-slate-50">
+                    <div class="ticket-cutout-left"></div>
+                    <div class="ticket-cutout-right"></div>
+
+                    <div class="grid sm:grid-cols-3 gap-6 items-center">
+                        
+                        <!-- Left 2 Cols: Event Info & Attendee Details -->
+                        <div class="sm:col-span-2 space-y-4">
+                            <div>
+                                <span id="modal-category" class="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Category</span>
+                                <h2 id="modal-title" class="text-xl sm:text-2xl font-black text-charcoal mt-1.5 leading-tight">Event Title</h2>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 text-xs border-y border-gray-200 py-3">
+                                <div>
+                                    <p class="text-[10px] text-gray-400 uppercase font-bold">Attendee</p>
+                                    <p id="modal-attendee-name" class="font-bold text-charcoal">{{ user_fullname }}</p>
+                                    <p class="text-[10px] text-gray-500 truncate">{{ user_email }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 uppercase font-bold">Date & Time</p>
+                                    <p id="modal-date" class="font-bold text-charcoal">TBA</p>
+                                </div>
+                            </div>
+
+                            <!-- Custom Answers Container -->
+                            <div id="modal-custom-fields" class="flex flex-wrap gap-1.5"></div>
+
+                            <div class="flex items-center justify-between text-xs pt-1">
+                                <div>
+                                    <span class="text-[10px] text-gray-400 uppercase font-bold block">Status</span>
+                                    <span id="modal-status-badge" class="font-black text-green-700">CONFIRMED</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] text-gray-400 uppercase font-bold block">Pass ID</span>
+                                    <span id="modal-attendee-id" class="font-mono font-bold text-charcoal">ATT-0000</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Col: QR Code Stub -->
+                        <div class="sm:col-span-1 border-t sm:border-t-0 sm:border-l border-gray-200 pt-4 sm:pt-0 sm:pl-6 text-center flex flex-col items-center justify-center">
+                            <div class="p-2 bg-white rounded-xl shadow-inner border border-gray-200 mb-2">
+                                <img id="modal-qr-img" src="" alt="Ticket QR" class="w-28 h-28 object-contain"/>
+                            </div>
+                            <p class="text-[9px] text-gray-400 font-semibold uppercase tracking-wider">Scan at Entrance</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer Controls -->
+            <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between gap-3 no-print">
+                <button onclick="window.print()" class="px-5 py-2.5 rounded-xl bg-charcoal hover:bg-primary text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
+                    <span class="material-symbols-outlined text-sm">print</span>
+                    Print / Save PDF
+                </button>
+                <button onclick="closeTicketModal()" class="px-4 py-2.5 rounded-xl bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs transition-all cursor-pointer">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Pass Data Store (JSON for Modal) -->
+    <script>
+        const ticketsData = {
+            {% for t in confirmed_tickets + past_events %}
+            "{{ t.name }}": {
+                name: "{{ t.name }}",
+                event_title: "{{ t.event_title | escape }}",
+                event_category: "{{ t.event_category | escape }}",
+                date: "{{ t.formatted_start_date }}",
+                status: "{{ t.status }}",
+                custom_fields: {{ t.custom_fields_list | tojson }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        };
+
+        function switchTab(tabId) {
+            // Hide all tab panes
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+            // Remove active classes on buttons
+            document.querySelectorAll('.tab-button').forEach(b => {
+                b.classList.remove('bg-charcoal', 'text-white', 'shadow-sm');
+                b.classList.add('bg-white', 'text-gray-600', 'border', 'border-gray-200');
+            });
+
+            // Show selected tab pane
+            const activePane = document.getElementById('tab-content-' + tabId);
+            if (activePane) activePane.classList.remove('hidden');
+
+            // Set active button style
+            const activeBtn = document.getElementById('tab-btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-white', 'text-gray-600', 'border', 'border-gray-200');
+                activeBtn.classList.add('bg-charcoal', 'text-white', 'shadow-sm');
+            }
+        }
+
+        function openTicketModal(attendeeId) {
+            const data = ticketsData[attendeeId];
+            if (!data) return;
+
+            document.getElementById('modal-title').textContent = data.event_title;
+            document.getElementById('modal-category').textContent = data.event_category;
+            document.getElementById('modal-date').textContent = data.date;
+            document.getElementById('modal-attendee-id').textContent = data.name;
+            document.getElementById('modal-status-badge').textContent = data.status.toUpperCase();
+
+            // Populate custom questions badges
+            const customContainer = document.getElementById('modal-custom-fields');
+            customContainer.innerHTML = '';
+            if (data.custom_fields && data.custom_fields.length > 0) {
+                data.custom_fields.forEach(cf => {
+                    const badge = document.createElement('span');
+                    badge.className = 'px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-[10px] font-semibold';
+                    badge.innerHTML = `${cf.label}: <strong class="text-charcoal">${cf.value}</strong>`;
+                    customContainer.appendChild(badge);
+                });
+            }
+
+            // Generate high-resolution QR Code pointing to Attendee verification token
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.name + '|' + data.event_title)}`;
+            document.getElementById('modal-qr-img').src = qrUrl;
+
+            document.getElementById('ticket-modal').classList.remove('hidden');
+        }
+
+        function closeTicketModal() {
+            document.getElementById('ticket-modal').classList.add('hidden');
+        }
+
+        // Close on background click or Esc key
+        document.getElementById('ticket-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeTicketModal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeTicketModal();
+        });
+
+        function addToGoogleCal(title, startIso, endIso, desc) {
+            const formatGoogleDate = (dStr) => {
+                if (!dStr) return null;
+                const d = new Date(dStr);
+                return isNaN(d.getTime()) ? null : d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            };
+            const dtStart = formatGoogleDate(startIso);
+            let dtEnd = formatGoogleDate(endIso);
+            if (!dtEnd && dtStart) {
+                const d = new Date(startIso);
+                d.setHours(d.getHours() + 2);
+                dtEnd = d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            }
+            const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${dtStart}/${dtEnd}&details=${encodeURIComponent(desc)}`;
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
+{% endblock %}

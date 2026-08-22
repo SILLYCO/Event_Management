@@ -64,6 +64,20 @@ app_license = "mit"
 #   "Role": "home_page"
 # }
 
+# Portal Menu Items
+# -----------------
+portal_menu_items = [
+    {"title": "My Events & Tickets", "route": "/my-events", "role": "All"}
+]
+
+# Website Route Rules
+# -------------------
+website_route_rules = [
+    {"from_route": "/my-events", "to_route": "my_events"}
+]
+
+
+
 # Generators
 # ----------
 

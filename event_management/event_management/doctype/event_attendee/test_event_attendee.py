@@ -318,3 +318,58 @@ class TestEventAttendee(FrappeTestCase):
         reg_approved = frappe.get_doc("Event Attendee", reg.name)
         self.assertEqual(reg_approved.paid_amount, 45.0)
         self.assertEqual(reg_approved.remaining_amount, 55.0)
+
+    def test_my_events_portal_context(self):
+        from event_management.www.my_events import get_context
+
+        # 1. Guest redirect check
+        frappe.set_user("Guest")
+        ctx = frappe._dict()
+        self.assertRaises(frappe.Redirect, get_context, ctx)
+
+        # 2. Logged-in user context check
+        frappe.set_user(self.user)
+
+        # Create confirmed registration
+        reg1 = frappe.new_doc("Event Attendee")
+        reg1.event_activity = self.event1
+        reg1.event_is_paid = "Paid"
+        reg1.event_price = 100.0
+        reg1.insert(ignore_permissions=True)
+
+        frappe.set_user("Administrator")
+        reg1.status = "Registered"
+        reg1.append("payment_entries", {
+            "payment_date": now_datetime(),
+            "amount": 100.0,
+            "payment_method": "Instapay",
+            "status": "Approved"
+        })
+        reg1.save(ignore_permissions=True)
+
+        # Create pending registration
+        frappe.set_user(self.user)
+        reg2 = frappe.new_doc("Event Attendee")
+        reg2.event_activity = self.event3
+        reg2.event_is_paid = "Paid"
+        reg2.event_price = 100.0
+        reg2.insert(ignore_permissions=True) # Defaults to Pending Approval
+
+        # Fetch context
+        ctx = frappe._dict()
+        get_context(ctx)
+
+        self.assertEqual(ctx.kpi_confirmed, 1)
+        self.assertEqual(ctx.kpi_pending, 1)
+        self.assertEqual(len(ctx.confirmed_tickets), 1)
+        self.assertEqual(len(ctx.pending_actions), 1)
+        self.assertEqual(ctx.confirmed_tickets[0].name, reg1.name)
+        self.assertEqual(ctx.pending_actions[0].name, reg2.name)
+
+        # 3. Test HTTP Response
+        from frappe.website.serve import get_response
+        res = get_response("my_events")
+        self.assertEqual(res.status_code, 200)
+
+
+
